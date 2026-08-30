@@ -5,7 +5,7 @@ pages_build_output_dir = "./dist"
 [[d1_databases]]
 binding = "DB"
 database_name = "agenda-bynuno-db"
-database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+database_id = "c04352ba-bfa7-4926-ac2c-2f99927c8b52"
 
 [vars]
 APP_URL = "https://agenda.bynuno.com"
