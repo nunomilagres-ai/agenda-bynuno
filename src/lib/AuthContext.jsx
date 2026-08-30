@@ -34,7 +34,7 @@ export function AuthProvider({ children }) {
   const logout = useCallback(async () => {
     await fetch('/api/auth/logout', { method: 'POST' })
     setUser(null)
-    window.location.href = 'https://bynuno.com/login?redirect=https://agenda.bynuno.com'
+    window.location.href = 'https://bynuno.com/login?next=https://agenda.bynuno.com'
   }, [])
 
   return (

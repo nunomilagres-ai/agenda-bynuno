@@ -27,7 +27,7 @@ function LoginPage() {
         <p className="text-sm" style={{ color: 'var(--text-3)' }}>O teu calendário, com cores por localização.</p>
       </div>
       <a
-        href="https://bynuno.com/login?redirect=https://agenda.bynuno.com"
+        href="https://bynuno.com/login?next=https://agenda.bynuno.com"
         className="flex items-center gap-3 px-6 py-3 rounded-xl font-medium text-white transition-opacity hover:opacity-90"
         style={{ background: 'var(--accent-solid)' }}
       >
