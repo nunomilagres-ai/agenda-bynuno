@@ -1,0 +1,97 @@
+name: Deploy agenda.bynuno.com
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch: {}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, '[skip-deploy]')"
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Preparar base de dados D1 (cria se não existir, corre o schema)
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          set -e
+
+          ACCOUNT_ID=$(curl -s -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts?per_page=1" \
+            | grep -oE '"id":"[a-f0-9]{32}"' | head -1 | grep -oE '[a-f0-9]{32}')
+          if [ -z "$ACCOUNT_ID" ]; then
+            echo "Não consegui obter o Account ID da Cloudflare. Verifica se o secret CLOUDFLARE_API_TOKEN está correto."
+            exit 1
+          fi
+          echo "CLOUDFLARE_ACCOUNT_ID=$ACCOUNT_ID" >> "$GITHUB_ENV"
+
+          set +e
+          CREATE_OUT=$(npx wrangler d1 create agenda-bynuno-db 2>&1)
+          set -e
+          echo "$CREATE_OUT"
+          DB_ID=$(echo "$CREATE_OUT" | grep -oE '[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}' | head -1)
+
+          if [ -z "$DB_ID" ]; then
+            echo "Base de dados já deve existir — a procurar o ID..."
+            LIST_OUT=$(npx wrangler d1 list 2>&1)
+            echo "$LIST_OUT"
+            DB_ID=$(echo "$LIST_OUT" | grep -B2 -A2 'agenda-bynuno-db' | grep -oE '[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}' | head -1)
+          fi
+
+          if [ -z "$DB_ID" ]; then
+            echo "Não consegui determinar o database_id da D1."
+            exit 1
+          fi
+          echo "D1_DATABASE_ID=$DB_ID" >> "$GITHUB_ENV"
+
+          sed -i "s/REPLACE_WITH_YOUR_D1_DATABASE_ID/$DB_ID/" wrangler.toml
+
+          npx wrangler d1 execute agenda-bynuno-db --remote --file=./schema.sql
+
+      - name: Guardar o database_id no repositório (só na primeira vez)
+        run: |
+          if ! git diff --quiet wrangler.toml; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add wrangler.toml
+            git commit -m "chore: registar D1 database_id [skip-deploy]"
+            git push
+          fi
+
+      - name: Build
+        run: npm run build
+
+      - name: Criar o projeto Cloudflare Pages (se não existir)
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ env.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx wrangler pages project create agenda-bynuno --production-branch=master || true
+
+      - name: Deploy para Cloudflare Pages
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ env.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx wrangler pages deploy ./dist --project-name=agenda-bynuno --branch=master
+
+      - name: Ligar o domínio agenda.bynuno.com (se ainda não estiver ligado)
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          curl -s -X POST \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"name":"agenda.bynuno.com"}' \
+            "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/pages/projects/agenda-bynuno/domains" || true
