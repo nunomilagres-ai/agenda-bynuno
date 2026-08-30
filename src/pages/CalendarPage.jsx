@@ -1,0 +1,199 @@
+// CalendarPage.jsx — vista mensal principal
+import { useState, useEffect, useCallback, useMemo } from 'react'
+import { ChevronLeft, ChevronRight, Plus, MapPin, LogOut, CalendarPlus } from 'lucide-react'
+import { toast } from 'sonner'
+import { useAuth } from '@/lib/AuthContext'
+import { api } from '@/lib/api'
+import { MONTH_NAMES, buildMonthGrid, todayKey } from '@/lib/dateUtils'
+import MonthGrid from '@/components/MonthGrid'
+import EventModal from '@/components/EventModal'
+import LocationSidebar from '@/components/LocationSidebar'
+import LocationPeriodModal from '@/components/LocationPeriodModal'
+
+export default function CalendarPage() {
+  const { user, logout } = useAuth()
+  const today = new Date()
+  const [year, setYear] = useState(today.getFullYear())
+  const [month, setMonth] = useState(today.getMonth())
+
+  const [locations, setLocations] = useState([])
+  const [periods, setPeriods] = useState([])
+  const [events, setEvents] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  const [showLocations, setShowLocations] = useState(false)
+  const [eventModal, setEventModal] = useState(null)   // { date } | { event }
+  const [periodModal, setPeriodModal] = useState(null) // { location } | null
+
+  const cells = useMemo(() => buildMonthGrid(year, month), [year, month])
+  const rangeStart = cells[0].key
+  const rangeEnd = cells[cells.length - 1].key
+  const tKey = todayKey()
+
+  const loadData = useCallback(async () => {
+    setLoading(true)
+    try {
+      const [locs, pers, evs] = await Promise.all([
+        api.locations.list(),
+        api.locationPeriods.list(rangeStart, rangeEnd),
+        api.events.list(rangeStart, rangeEnd),
+      ])
+      setLocations(locs)
+      setPeriods(pers)
+      setEvents(evs)
+    } catch (err) {
+      toast.error(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }, [rangeStart, rangeEnd])
+
+  useEffect(() => { loadData() }, [loadData])
+
+  function prevMonth() { if (month === 0) { setMonth(11); setYear(y => y - 1) } else setMonth(m => m - 1) }
+  function nextMonth() { if (month === 11) { setMonth(0); setYear(y => y + 1) } else setMonth(m => m + 1) }
+  function goToday() { setYear(today.getFullYear()); setMonth(today.getMonth()) }
+
+  // dateKey -> period (primeira localização que cobre o dia)
+  const periodByDay = useMemo(() => {
+    const map = {}
+    for (const cell of cells) {
+      for (const p of periods) {
+        if (p.start_date <= cell.key && cell.key <= p.end_date) { map[cell.key] = p; break }
+      }
+    }
+    return map
+  }, [cells, periods])
+
+  // dateKey -> eventos que ocorrem nesse dia (expande eventos multi-dia)
+  const eventsByDay = useMemo(() => {
+    const map = {}
+    for (const ev of events) {
+      const s = ev.start_datetime.slice(0, 10)
+      const e = ev.end_datetime.slice(0, 10)
+      for (const cell of cells) {
+        if (s <= cell.key && cell.key <= e) {
+          if (!map[cell.key]) map[cell.key] = []
+          map[cell.key].push(ev)
+        }
+      }
+    }
+    return map
+  }, [cells, events])
+
+  return (
+    <div className="min-h-screen flex flex-col" style={{ background: '#F5F7FB' }}>
+      <header className="flex items-center justify-between px-5 py-3 flex-shrink-0"
+        style={{ background: '#FFFFFF', borderBottom: '1px solid #E2E6EF' }}>
+        <div className="flex items-center gap-3">
+          <span className="text-xl">🗓️</span>
+          <h1 className="text-base font-semibold" style={{ color: '#131A2A' }}>Agenda</h1>
+        </div>
+        <div className="flex items-center gap-2">
+          <button onClick={() => setShowLocations(true)}
+            className="flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg hover:bg-gray-100"
+            style={{ color: '#4B5567' }}>
+            <MapPin size={14} /> Localizações
+          </button>
+          <button onClick={() => setEventModal({ date: tKey })}
+            className="flex items-center gap-1.5 text-sm font-semibold px-3 py-1.5 rounded-lg text-white"
+            style={{ background: '#2E5FCB' }}>
+            <Plus size={14} /> Evento
+          </button>
+          {user && (
+            <button onClick={logout} title="Sair" className="p-1.5 rounded-lg hover:bg-gray-100">
+              <LogOut size={15} style={{ color: '#8A93A6' }} />
+            </button>
+          )}
+        </div>
+      </header>
+
+      <div className="flex items-center justify-between px-5 py-3 flex-shrink-0">
+        <div className="flex items-center gap-2">
+          <button onClick={prevMonth} className="p-1.5 rounded-lg hover:bg-gray-100">
+            <ChevronLeft size={16} style={{ color: '#4B5567' }} />
+          </button>
+          <span className="text-sm font-semibold w-36 text-center" style={{ color: '#131A2A' }}>
+            {MONTH_NAMES[month]} {year}
+          </span>
+          <button onClick={nextMonth} className="p-1.5 rounded-lg hover:bg-gray-100">
+            <ChevronRight size={16} style={{ color: '#4B5567' }} />
+          </button>
+          <button onClick={goToday}
+            className="text-xs font-medium px-2.5 py-1 rounded-lg ml-1 hover:bg-gray-100"
+            style={{ color: '#2E5FCB', border: '1px solid #E2E6EF' }}>
+            Hoje
+          </button>
+        </div>
+
+        {locations.length > 0 && (
+          <div className="hidden sm:flex items-center gap-3">
+            {locations.map(l => (
+              <span key={l.id} className="flex items-center gap-1.5 text-xs" style={{ color: '#4B5567' }}>
+                <span className="w-2.5 h-2.5 rounded-full" style={{ background: l.color }} />
+                {l.name}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <main className="flex-1 flex flex-col px-5 pb-5 min-h-0">
+        <div className="flex-1 flex flex-col rounded-xl overflow-hidden min-h-0"
+          style={{ border: '1px solid #E2E6EF', opacity: loading ? 0.6 : 1 }}>
+          <MonthGrid
+            cells={cells}
+            periodByDay={periodByDay}
+            eventsByDay={eventsByDay}
+            todayKey={tKey}
+            onDayClick={(dateKey) => setEventModal({ date: dateKey })}
+            onEventClick={(event) => setEventModal({ event })}
+            onPeriodClick={(period) => setPeriodModal({ period })}
+          />
+        </div>
+      </main>
+
+      {eventModal && (
+        <EventModal
+          date={eventModal.date}
+          event={eventModal.event}
+          locations={locations}
+          onClose={() => setEventModal(null)}
+          onSaved={loadData}
+          onDeleted={loadData}
+        />
+      )}
+
+      {showLocations && (
+        <LocationSidebar
+          locations={locations}
+          onClose={() => setShowLocations(false)}
+          onChanged={loadData}
+          onMarkPeriod={(loc) => { setPeriodModal({ location: loc }); }}
+        />
+      )}
+
+      {periodModal && (
+        <LocationPeriodModal
+          locations={locations}
+          defaultLocationId={periodModal.location?.id}
+          defaultDate={tKey}
+          period={periodModal.period}
+          onClose={() => setPeriodModal(null)}
+          onSaved={loadData}
+          onDeleted={loadData}
+        />
+      )}
+
+      {locations.length === 0 && !loading && (
+        <div className="fixed bottom-5 right-5 max-w-xs p-3 rounded-xl animate-fade-in flex items-start gap-2"
+          style={{ background: '#FFFFFF', border: '1px solid #E2E6EF', boxShadow: '0 4px 14px rgba(19,26,42,0.08)' }}>
+          <CalendarPlus size={16} style={{ color: '#2E5FCB', marginTop: 2 }} />
+          <p className="text-xs" style={{ color: '#4B5567' }}>
+            Cria localizações (Porto, Lisboa, Vila Real...) em <strong>Localizações</strong> para tingir os dias do calendário.
+          </p>
+        </div>
+      )}
+    </div>
+  )
+}
