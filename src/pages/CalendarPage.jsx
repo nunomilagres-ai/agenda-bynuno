@@ -149,6 +149,10 @@ export default function CalendarPage() {
             onDayClick={(dateKey) => setEventModal({ date: dateKey })}
             onEventClick={(event) => setEventModal({ event })}
             onPeriodClick={(period) => setPeriodModal({ period })}
+            onRangeSelect={(start, end) => {
+              if (locations.length === 0) { toast.error('Cria uma localização primeiro em "Localizações"'); return }
+              setPeriodModal({ range: { start, end } })
+            }}
           />
         </div>
       </main>
@@ -178,6 +182,8 @@ export default function CalendarPage() {
           locations={locations}
           defaultLocationId={periodModal.location?.id}
           defaultDate={tKey}
+          defaultStartDate={periodModal.range?.start}
+          defaultEndDate={periodModal.range?.end}
           period={periodModal.period}
           onClose={() => setPeriodModal(null)}
           onSaved={loadData}
