@@ -14,7 +14,18 @@ Calendário pessoal estilo Outlook: vista mensal, células coloridas por localiz
 - **Períodos de localização**: marca "estarei em X de A a B" — tinge as células desses dias na grelha, sem criar um evento.
 - **Eventos**: reuniões/compromissos correntes, opcionalmente associados a uma localização (cor do chip).
 
-## Setup
+## Deploy (automático)
+
+Publicado automaticamente via GitHub Actions (`.github/workflows/deploy.yml`) a cada
+alteração em `master`: cria a base de dados D1 se ainda não existir, corre o schema,
+faz build e publica no Cloudflare Pages, incluindo o domínio `agenda.bynuno.com`.
+
+Único passo manual (uma única vez): adicionar o secret `CLOUDFLARE_API_TOKEN` nas
+definições do repositório GitHub (Settings → Secrets and variables → Actions).
+Token criado em dash.cloudflare.com/profile/api-tokens usando o template
+"Edit Cloudflare Workers".
+
+## Setup manual (alternativa/local)
 
 ### 1. Instalar dependências
 ```bash
@@ -37,12 +48,11 @@ npm run build
 npx wrangler pages dev ./dist --d1 DB=<database_id>
 ```
 
-### 5. Deploy
+### 5. Deploy manual
 ```bash
 npm run build
 npx wrangler pages deploy ./dist
 ```
-Configurar o domínio `agenda.bynuno.com` no painel Cloudflare Pages.
 
 ## Estrutura
 ```
