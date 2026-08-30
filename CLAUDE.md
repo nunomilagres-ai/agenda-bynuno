@@ -56,6 +56,15 @@ Implementado com `prefers-color-scheme`: os tokens em `:root` são os valores **
 componentes — usar sempre `var(--token)`. É o que garante que a app muda de tema sem
 tocar em cada componente.
 
+**Impressão/PDF**: forçar sempre o tema claro ao imprimir, independentemente do tema do
+ecrã — fundo escuro desperdiça tinteiro e fica ilegível em papel. Juntar `print` à
+media query do tema claro:
+```css
+@media (prefers-color-scheme: light), print {
+  :root { /* tokens claros */ }
+}
+```
+
 `--accent-solid` existe porque `--accent` no tema escuro é mais claro (para contraste
 sobre fundo escuro) e não garante contraste suficiente com texto branco por cima; usar
 `--accent-solid` sempre que o botão tiver fundo cheio de cor e texto branco.

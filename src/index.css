@@ -21,7 +21,8 @@
   --shadow: rgba(0, 0, 0, 0.3);
 }
 
-@media (prefers-color-scheme: light) {
+/* Claro quando o SO preferir, e sempre ao imprimir/gerar PDF — fundo escuro não deve ir para papel. */
+@media (prefers-color-scheme: light), print {
   :root {
     --bg: #F5F7FB;
     --surface: #FFFFFF;
@@ -39,6 +40,10 @@
     --overlay: rgba(19, 26, 42, 0.35);
     --shadow: rgba(19, 26, 42, 0.08);
   }
+}
+
+@media print {
+  body { color-scheme: light; }
 }
 
 /* ─── Base ─────────────────────────────────────────────────────────────────── */
