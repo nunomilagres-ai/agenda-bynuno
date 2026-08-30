@@ -1,6 +1,6 @@
 // CalendarPage.jsx — vista mensal principal
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { ChevronLeft, ChevronRight, Plus, MapPin, LogOut, CalendarPlus } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Plus, MapPin, LogOut, CalendarPlus, Printer } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuth } from '@/lib/AuthContext'
 import { api } from '@/lib/api'
@@ -89,7 +89,7 @@ export default function CalendarPage() {
           <span className="text-xl">🗓️</span>
           <h1 className="text-base font-semibold" style={{ color: 'var(--text)' }}>Agenda</h1>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 no-print">
           <button onClick={() => setShowLocations(true)}
             className="flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg hover:bg-[var(--surface-2)]"
             style={{ color: 'var(--text-2)' }}>
@@ -99,6 +99,9 @@ export default function CalendarPage() {
             className="flex items-center gap-1.5 text-sm font-semibold px-3 py-1.5 rounded-lg text-white"
             style={{ background: 'var(--accent-solid)' }}>
             <Plus size={14} /> Evento
+          </button>
+          <button onClick={() => window.print()} title="Imprimir" className="p-1.5 rounded-lg hover:bg-[var(--surface-2)]">
+            <Printer size={15} style={{ color: 'var(--text-3)' }} />
           </button>
           {user && (
             <button onClick={logout} title="Sair" className="p-1.5 rounded-lg hover:bg-[var(--surface-2)]">
@@ -110,17 +113,17 @@ export default function CalendarPage() {
 
       <div className="flex items-center justify-between px-5 py-3 flex-shrink-0">
         <div className="flex items-center gap-2">
-          <button onClick={prevMonth} className="p-1.5 rounded-lg hover:bg-[var(--surface-2)]">
+          <button onClick={prevMonth} className="p-1.5 rounded-lg hover:bg-[var(--surface-2)] no-print">
             <ChevronLeft size={16} style={{ color: 'var(--text-2)' }} />
           </button>
           <span className="text-sm font-semibold w-36 text-center" style={{ color: 'var(--text)' }}>
             {MONTH_NAMES[month]} {year}
           </span>
-          <button onClick={nextMonth} className="p-1.5 rounded-lg hover:bg-[var(--surface-2)]">
+          <button onClick={nextMonth} className="p-1.5 rounded-lg hover:bg-[var(--surface-2)] no-print">
             <ChevronRight size={16} style={{ color: 'var(--text-2)' }} />
           </button>
           <button onClick={goToday}
-            className="text-xs font-medium px-2.5 py-1 rounded-lg ml-1 hover:bg-[var(--surface-2)]"
+            className="text-xs font-medium px-2.5 py-1 rounded-lg ml-1 hover:bg-[var(--surface-2)] no-print"
             style={{ color: 'var(--accent)', border: '1px solid var(--border)' }}>
             Hoje
           </button>
@@ -192,7 +195,7 @@ export default function CalendarPage() {
       )}
 
       {locations.length === 0 && !loading && (
-        <div className="fixed bottom-5 right-5 max-w-xs p-3 rounded-xl animate-fade-in flex items-start gap-2"
+        <div className="fixed bottom-5 right-5 max-w-xs p-3 rounded-xl animate-fade-in flex items-start gap-2 no-print"
           style={{ background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: '0 4px 14px var(--shadow)' }}>
           <CalendarPlus size={16} style={{ color: 'var(--accent)', marginTop: 2 }} />
           <p className="text-xs" style={{ color: 'var(--text-2)' }}>

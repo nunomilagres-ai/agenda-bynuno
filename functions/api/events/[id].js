@@ -2,6 +2,7 @@
 // PUT    /api/events/:id — editar evento
 // DELETE /api/events/:id — apagar evento
 import { getAuthUser, unauthorized, badRequest, notFound, json } from '../../_auth.js';
+import { RECURRENCE_FREQS } from '../../_recurrence.js';
 
 function now() { return new Date().toISOString(); }
 
@@ -49,16 +50,25 @@ export async function onRequestPut({ request, env, params }) {
     if (!loc) locationId = null;
   }
 
+  let recurrenceFreq = body.recurrence_freq !== undefined ? body.recurrence_freq : event.recurrence_freq;
+  if (recurrenceFreq && !RECURRENCE_FREQS.includes(recurrenceFreq)) {
+    return badRequest('recurrence_freq inválida');
+  }
+  const recurrenceUntil = recurrenceFreq
+    ? (body.recurrence_until !== undefined ? body.recurrence_until : event.recurrence_until)
+    : null;
+
   const ts = now();
   await env.DB.prepare(
     `UPDATE events SET title = ?, description = ?, start_datetime = ?, end_datetime = ?,
-     all_day = ?, location_id = ?, updated_date = ?
+     all_day = ?, location_id = ?, recurrence_freq = ?, recurrence_until = ?, updated_date = ?
      WHERE id = ? AND user_id = ?`
-  ).bind(title, description, startDatetime, endDatetime, allDay, locationId, ts, params.id, user.id).run();
+  ).bind(title, description, startDatetime, endDatetime, allDay, locationId, recurrenceFreq, recurrenceUntil, ts, params.id, user.id).run();
 
   return json({
     id: params.id, title, description, start_datetime: startDatetime, end_datetime: endDatetime,
-    all_day: allDay, location_id: locationId, updated_date: ts,
+    all_day: allDay, location_id: locationId, recurrence_freq: recurrenceFreq, recurrence_until: recurrenceUntil,
+    updated_date: ts,
   });
 }
 

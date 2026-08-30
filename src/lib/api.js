@@ -1,6 +1,10 @@
 // src/lib/api.js — API client helpers
 const J = { 'Content-Type': 'application/json' }
 
+// Ocorrências de eventos recorrentes usam um id sintético "<id>::<data>" — as
+// chamadas à API operam sempre sobre o evento real (a série inteira).
+function realId(id) { return String(id).split('::')[0] }
+
 async function handle(res) {
   if (res.status === 204) return null
   const data = await res.json().catch(() => null)
@@ -23,10 +27,10 @@ export const api = {
   },
   events: {
     list:   (start, end) => fetch(`/api/events?start=${start}&end=${end}`).then(handle),
-    get:    (id)          => fetch(`/api/events/${id}`).then(handle),
+    get:    (id)          => fetch(`/api/events/${realId(id)}`).then(handle),
     create: (d)           => fetch('/api/events', { method: 'POST', headers: J, body: JSON.stringify(d) }).then(handle),
-    update: (id, d)        => fetch(`/api/events/${id}`, { method: 'PUT', headers: J, body: JSON.stringify(d) }).then(handle),
-    delete: (id)           => fetch(`/api/events/${id}`, { method: 'DELETE' }).then(handle),
+    update: (id, d)        => fetch(`/api/events/${realId(id)}`, { method: 'PUT', headers: J, body: JSON.stringify(d) }).then(handle),
+    delete: (id)           => fetch(`/api/events/${realId(id)}`, { method: 'DELETE' }).then(handle),
   },
 }
 

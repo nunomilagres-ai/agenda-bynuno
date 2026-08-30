@@ -11,8 +11,18 @@ Calendário pessoal estilo Outlook: vista mensal, células coloridas por localiz
 ## Conceitos
 
 - **Localizações**: criadas por ti (nome + cor) — Porto, Lisboa, Vila Real, ou outras.
-- **Períodos de localização**: marca "estarei em X de A a B" — tinge as células desses dias na grelha, sem criar um evento.
-- **Eventos**: reuniões/compromissos correntes, opcionalmente associados a uma localização (cor do chip).
+- **Períodos de localização**: marca "estarei em X de A a B" — tinge as células desses dias na grelha, sem criar um evento. Marca-se arrastando sobre os dias na grelha (o intervalo fica logo preenchido, só falta escolher a localização).
+- **Eventos**: reuniões/compromissos correntes, opcionalmente associados a uma localização (cor do chip). Podem repetir-se (semanal, quinzenal, de 3 em 3 semanas, mensal, anual) — ver "Recorrência" abaixo.
+- **Feriados**: os 13 feriados nacionais obrigatórios (incluindo os móveis, calculados a partir da Páscoa) e o feriado municipal de Santo António (Lisboa e Vila Real) aparecem automaticamente a vermelho na grelha. Fins de semana têm um fundo ligeiramente diferente.
+- **Impressão**: botão de imprimir no cabeçalho; a impressão/PDF força sempre o tema claro e esconde os controlos, independentemente do tema do ecrã.
+
+### Recorrência
+
+Um evento recorrente é guardado como uma única linha na base de dados (a primeira
+ocorrência); as ocorrências seguintes são calculadas em runtime por
+`functions/_recurrence.js`, nunca gravadas. Simplificação assumida: editar ou apagar
+qualquer ocorrência edita/apaga a série inteira — não há edição de uma ocorrência
+isolada ("só este evento" vs. "todos").
 
 ## Deploy (automático)
 
@@ -58,6 +68,7 @@ npx wrangler pages deploy ./dist
 ```
 functions/
   _auth.js                    Auth helper (delega ao bynuno.com hub)
+  _recurrence.js               Expande eventos recorrentes num intervalo de datas
   [[path]].js                 SPA fallback
   api/
     auth/me.js                GET /api/auth/me
@@ -66,31 +77,36 @@ functions/
     locations/[id].js         PUT/DELETE /api/locations/:id
     location-periods/index.js GET/POST /api/location-periods
     location-periods/[id].js  PUT/DELETE /api/location-periods/:id
-    events/index.js           GET/POST /api/events
+    events/index.js           GET/POST /api/events (expande recorrências no GET)
     events/[id].js            GET/PUT/DELETE /api/events/:id
+
+migrations/                   ALTER TABLE aplicados a cada deploy (tolerantes a já aplicados)
 
 src/
   pages/CalendarPage.jsx      Vista mensal principal
   components/
-    MonthGrid.jsx             Grelha mensal (células tingidas + chips de eventos)
-    EventModal.jsx            Criar/editar evento
+    MonthGrid.jsx             Grelha mensal (arrastar para marcar localização, feriados, fins de semana)
+    EventModal.jsx            Criar/editar evento, incl. recorrência
     LocationSidebar.jsx       Gerir localizações e cores
     LocationPeriodModal.jsx   Marcar/editar período de localização
   lib/
     AuthContext.jsx           Context de autenticação
     api.js                    API client
     dateUtils.js              Helpers de datas + grelha mensal
+    holidays.js               Feriados nacionais e municipais (Lisboa, Vila Real)
 ```
 
 ## Funcionalidades (v1)
 - Vista mensal estilo Outlook, navegação por mês + "Hoje"
 - Localizações com cor personalizável, ilimitadas
-- Períodos de localização (multi-dia) que tingem os dias correspondentes
-- Eventos com dia inteiro ou hora específica, associáveis a uma localização
+- Períodos de localização (multi-dia, marcados arrastando na grelha) que tingem os dias correspondentes
+- Eventos com dia inteiro ou hora específica, associáveis a uma localização, com recorrência opcional
+- Feriados nacionais e municipais (Lisboa, Vila Real) e fins de semana assinalados na grelha
+- Impressão/PDF em tema claro, com um botão dedicado
 - Autenticação via byNuno Hub (Google OAuth)
 
 ## Próximos passos (fora do âmbito da v1)
 - Vista semanal/diária
 - Sincronização bidirecional com Microsoft Outlook (Microsoft Graph API — requer App Registration no Azure AD)
 - Sincronização com Google Calendar
-- Eventos recorrentes
+- Editar/apagar uma única ocorrência de um evento recorrente (hoje afeta sempre a série inteira)

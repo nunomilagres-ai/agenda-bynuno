@@ -5,8 +5,18 @@ import { toast } from 'sonner'
 import { api } from '@/lib/api'
 import { isoToDate, isoToTime, combineDatetime } from '@/lib/dateUtils'
 
+const RECURRENCE_OPTIONS = [
+  { value: '',              label: 'Não se repete' },
+  { value: 'weekly',        label: 'Semanalmente' },
+  { value: 'biweekly',      label: 'Quinzenalmente' },
+  { value: 'every_3_weeks', label: 'De 3 em 3 semanas' },
+  { value: 'monthly',       label: 'Mensalmente' },
+  { value: 'yearly',        label: 'Anualmente' },
+]
+
 export default function EventModal({ date, event, locations, onClose, onSaved, onDeleted }) {
   const isEdit = !!event
+  const isRecurringOccurrence = isEdit && String(event.id).includes('::')
   const [title, setTitle] = useState(event?.title || '')
   const [description, setDescription] = useState(event?.description || '')
   const [locationId, setLocationId] = useState(event?.location_id || '')
@@ -15,6 +25,8 @@ export default function EventModal({ date, event, locations, onClose, onSaved, o
   const [startTime, setStartTime] = useState(event ? isoToTime(event.start_datetime) : '09:00')
   const [endDate, setEndDate] = useState(event ? isoToDate(event.end_datetime) : date)
   const [endTime, setEndTime] = useState(event ? isoToTime(event.end_datetime) : '10:00')
+  const [recurrenceFreq, setRecurrenceFreq] = useState(event?.recurrence_freq || '')
+  const [recurrenceUntil, setRecurrenceUntil] = useState(event?.recurrence_until || '')
   const [saving, setSaving] = useState(false)
 
   async function handleSubmit(e) {
@@ -28,6 +40,8 @@ export default function EventModal({ date, event, locations, onClose, onSaved, o
       all_day: allDay,
       start_datetime: allDay ? startDate : combineDatetime(startDate, startTime),
       end_datetime: allDay ? endDate : combineDatetime(endDate, endTime),
+      recurrence_freq: recurrenceFreq || null,
+      recurrence_until: recurrenceFreq ? (recurrenceUntil || null) : null,
     }
 
     setSaving(true)
@@ -122,6 +136,23 @@ export default function EventModal({ date, event, locations, onClose, onSaved, o
             <option value="">Sem localização</option>
             {locations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
           </select>
+
+          <div className="flex gap-2">
+            <select value={recurrenceFreq} onChange={e => setRecurrenceFreq(e.target.value)}
+              className="flex-1 px-3 py-2 rounded-lg text-sm" style={{ border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)' }}>
+              {RECURRENCE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+            {recurrenceFreq && (
+              <input type="date" value={recurrenceUntil} onChange={e => setRecurrenceUntil(e.target.value)}
+                title="Repetir até (opcional)"
+                className="px-2 py-1.5 rounded-lg text-sm w-36" style={{ border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)' }} />
+            )}
+          </div>
+          {isRecurringOccurrence && (
+            <p className="text-[11px] -mt-1" style={{ color: 'var(--text-3)' }}>
+              Este evento faz parte de uma série. Guardar ou apagar aplica-se a toda a série.
+            </p>
+          )}
 
           <textarea
             value={description}
