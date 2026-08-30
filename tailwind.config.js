@@ -7,29 +7,27 @@ export default {
   theme: {
     extend: {
       colors: {
-        brand: {
-          50:  '#EAF1FF',
-          100: '#D6E4FF',
-          200: '#AFC9FA',
-          300: '#7FA4F0',
-          400: '#4A7BE0',
-          500: '#2E5FCB',
-          600: '#264FAD',
-          700: '#1D3D87',
-          800: '#152C60',
-          900: '#0C1A38',
-        },
+        // Design tokens — ver src/index.css. Escuro por omissão, claro quando o SO preferir.
+        bg:      'var(--bg)',
         surface: {
-          bg:     '#F5F7FB',
-          card:   '#FFFFFF',
-          border: '#E2E6EF',
-          muted:  '#EEF1F8',
+          DEFAULT: 'var(--surface)',
+          2:       'var(--surface-2)',
         },
+        border:  'var(--border)',
         ink: {
-          DEFAULT: '#131A2A',
-          secondary: '#4B5567',
-          muted:     '#8A93A6',
-          faint:     '#C3C9D6',
+          DEFAULT: 'var(--text)',
+          secondary: 'var(--text-2)',
+          muted:     'var(--text-3)',
+        },
+        accent: {
+          DEFAULT: 'var(--accent)',
+          solid:   'var(--accent-solid)',
+          soft:    'var(--accent-soft)',
+          ink:     'var(--accent-ink)',
+        },
+        danger: {
+          DEFAULT: 'var(--danger)',
+          soft:    'var(--danger-soft)',
         },
       },
       fontFamily: {
