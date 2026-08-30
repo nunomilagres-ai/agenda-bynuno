@@ -82,27 +82,27 @@ export default function CalendarPage() {
   }, [cells, events])
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: '#F5F7FB' }}>
+    <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg)' }}>
       <header className="flex items-center justify-between px-5 py-3 flex-shrink-0"
-        style={{ background: '#FFFFFF', borderBottom: '1px solid #E2E6EF' }}>
+        style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
         <div className="flex items-center gap-3">
           <span className="text-xl">🗓️</span>
-          <h1 className="text-base font-semibold" style={{ color: '#131A2A' }}>Agenda</h1>
+          <h1 className="text-base font-semibold" style={{ color: 'var(--text)' }}>Agenda</h1>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => setShowLocations(true)}
-            className="flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg hover:bg-gray-100"
-            style={{ color: '#4B5567' }}>
+            className="flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg hover:bg-[var(--surface-2)]"
+            style={{ color: 'var(--text-2)' }}>
             <MapPin size={14} /> Localizações
           </button>
           <button onClick={() => setEventModal({ date: tKey })}
             className="flex items-center gap-1.5 text-sm font-semibold px-3 py-1.5 rounded-lg text-white"
-            style={{ background: '#2E5FCB' }}>
+            style={{ background: 'var(--accent-solid)' }}>
             <Plus size={14} /> Evento
           </button>
           {user && (
-            <button onClick={logout} title="Sair" className="p-1.5 rounded-lg hover:bg-gray-100">
-              <LogOut size={15} style={{ color: '#8A93A6' }} />
+            <button onClick={logout} title="Sair" className="p-1.5 rounded-lg hover:bg-[var(--surface-2)]">
+              <LogOut size={15} style={{ color: 'var(--text-3)' }} />
             </button>
           )}
         </div>
@@ -110,18 +110,18 @@ export default function CalendarPage() {
 
       <div className="flex items-center justify-between px-5 py-3 flex-shrink-0">
         <div className="flex items-center gap-2">
-          <button onClick={prevMonth} className="p-1.5 rounded-lg hover:bg-gray-100">
-            <ChevronLeft size={16} style={{ color: '#4B5567' }} />
+          <button onClick={prevMonth} className="p-1.5 rounded-lg hover:bg-[var(--surface-2)]">
+            <ChevronLeft size={16} style={{ color: 'var(--text-2)' }} />
           </button>
-          <span className="text-sm font-semibold w-36 text-center" style={{ color: '#131A2A' }}>
+          <span className="text-sm font-semibold w-36 text-center" style={{ color: 'var(--text)' }}>
             {MONTH_NAMES[month]} {year}
           </span>
-          <button onClick={nextMonth} className="p-1.5 rounded-lg hover:bg-gray-100">
-            <ChevronRight size={16} style={{ color: '#4B5567' }} />
+          <button onClick={nextMonth} className="p-1.5 rounded-lg hover:bg-[var(--surface-2)]">
+            <ChevronRight size={16} style={{ color: 'var(--text-2)' }} />
           </button>
           <button onClick={goToday}
-            className="text-xs font-medium px-2.5 py-1 rounded-lg ml-1 hover:bg-gray-100"
-            style={{ color: '#2E5FCB', border: '1px solid #E2E6EF' }}>
+            className="text-xs font-medium px-2.5 py-1 rounded-lg ml-1 hover:bg-[var(--surface-2)]"
+            style={{ color: 'var(--accent)', border: '1px solid var(--border)' }}>
             Hoje
           </button>
         </div>
@@ -129,7 +129,7 @@ export default function CalendarPage() {
         {locations.length > 0 && (
           <div className="hidden sm:flex items-center gap-3">
             {locations.map(l => (
-              <span key={l.id} className="flex items-center gap-1.5 text-xs" style={{ color: '#4B5567' }}>
+              <span key={l.id} className="flex items-center gap-1.5 text-xs" style={{ color: 'var(--text-2)' }}>
                 <span className="w-2.5 h-2.5 rounded-full" style={{ background: l.color }} />
                 {l.name}
               </span>
@@ -140,7 +140,7 @@ export default function CalendarPage() {
 
       <main className="flex-1 flex flex-col px-5 pb-5 min-h-0">
         <div className="flex-1 flex flex-col rounded-xl overflow-hidden min-h-0"
-          style={{ border: '1px solid #E2E6EF', opacity: loading ? 0.6 : 1 }}>
+          style={{ border: '1px solid var(--border)', opacity: loading ? 0.6 : 1 }}>
           <MonthGrid
             cells={cells}
             periodByDay={periodByDay}
@@ -187,9 +187,9 @@ export default function CalendarPage() {
 
       {locations.length === 0 && !loading && (
         <div className="fixed bottom-5 right-5 max-w-xs p-3 rounded-xl animate-fade-in flex items-start gap-2"
-          style={{ background: '#FFFFFF', border: '1px solid #E2E6EF', boxShadow: '0 4px 14px rgba(19,26,42,0.08)' }}>
-          <CalendarPlus size={16} style={{ color: '#2E5FCB', marginTop: 2 }} />
-          <p className="text-xs" style={{ color: '#4B5567' }}>
+          style={{ background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: '0 4px 14px var(--shadow)' }}>
+          <CalendarPlus size={16} style={{ color: 'var(--accent)', marginTop: 2 }} />
+          <p className="text-xs" style={{ color: 'var(--text-2)' }}>
             Cria localizações (Porto, Lisboa, Vila Real...) em <strong>Localizações</strong> para tingir os dias do calendário.
           </p>
         </div>

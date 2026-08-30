@@ -6,11 +6,11 @@ import CalendarPage from '@/pages/CalendarPage'
 // ─── Spinner de loading ───────────────────────────────────────────────────────
 function Spinner() {
   return (
-    <div className="min-h-screen flex items-center justify-center" style={{ background: '#F5F7FB' }}>
+    <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
       <div className="flex flex-col items-center gap-3">
         <div className="w-8 h-8 rounded-full border-2 border-t-transparent animate-spin"
-          style={{ borderColor: '#2E5FCB', borderTopColor: 'transparent' }} />
-        <span className="text-sm" style={{ color: '#8A93A6' }}>A carregar…</span>
+          style={{ borderColor: 'var(--accent)', borderTopColor: 'transparent' }} />
+        <span className="text-sm" style={{ color: 'var(--text-3)' }}>A carregar…</span>
       </div>
     </div>
   )
@@ -20,16 +20,16 @@ function Spinner() {
 function LoginPage() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center gap-6 px-4"
-      style={{ background: '#F5F7FB' }}>
+      style={{ background: 'var(--bg)' }}>
       <div className="flex flex-col items-center gap-2">
         <span className="text-4xl">🗓️</span>
-        <h1 className="text-2xl font-bold" style={{ color: '#131A2A' }}>Agenda</h1>
-        <p className="text-sm" style={{ color: '#8A93A6' }}>O teu calendário, com cores por localização.</p>
+        <h1 className="text-2xl font-bold" style={{ color: 'var(--text)' }}>Agenda</h1>
+        <p className="text-sm" style={{ color: 'var(--text-3)' }}>O teu calendário, com cores por localização.</p>
       </div>
       <a
         href="https://bynuno.com/login?redirect=https://agenda.bynuno.com"
         className="flex items-center gap-3 px-6 py-3 rounded-xl font-medium text-white transition-opacity hover:opacity-90"
-        style={{ background: 'linear-gradient(135deg, #4A7BE0 0%, #2E5FCB 100%)' }}
+        style={{ background: 'var(--accent-solid)' }}
       >
         <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
           <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 01-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#fff"/>
@@ -39,7 +39,7 @@ function LoginPage() {
         </svg>
         Entrar com Google via byNuno
       </a>
-      <p className="text-xs text-center" style={{ color: '#C3C9D6' }}>
+      <p className="text-xs text-center" style={{ color: 'var(--text-3)' }}>
         A autenticação é gerida pelo byNuno Hub
       </p>
     </div>

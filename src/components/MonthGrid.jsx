@@ -15,7 +15,7 @@ export default function MonthGrid({ cells, periodByDay, eventsByDay, todayKey, o
       <div className="grid grid-cols-7 flex-shrink-0">
         {DAY_NAMES.map(d => (
           <div key={d} className="text-xs font-semibold text-center py-2"
-            style={{ color: '#8A93A6', borderBottom: '1px solid #E2E6EF' }}>{d}</div>
+            style={{ color: 'var(--text-3)', borderBottom: '1px solid var(--border)' }}>{d}</div>
         ))}
       </div>
       <div className="grid grid-cols-7 flex-1 min-h-0" style={{ gridAutoRows: '1fr' }}>
@@ -23,7 +23,7 @@ export default function MonthGrid({ cells, periodByDay, eventsByDay, todayKey, o
           const period = periodByDay[cell.key]
           const dayEvents = eventsByDay[cell.key] || []
           const isToday = cell.key === todayKey
-          const bg = period ? hexToRgba(period.location_color, cell.inMonth ? 0.16 : 0.08) : (cell.inMonth ? '#FFFFFF' : '#FAFBFD')
+          const bg = period ? hexToRgba(period.location_color, cell.inMonth ? 0.16 : 0.08) : (cell.inMonth ? 'var(--surface)' : 'var(--surface-2)')
 
           return (
             <button
@@ -32,7 +32,7 @@ export default function MonthGrid({ cells, periodByDay, eventsByDay, todayKey, o
               className="flex flex-col items-stretch text-left p-1.5 min-h-[92px] transition-colors hover:opacity-90"
               style={{
                 background: bg,
-                border: '1px solid #EEF1F8',
+                border: '1px solid var(--border)',
                 opacity: cell.inMonth ? 1 : 0.6,
               }}
             >
@@ -48,8 +48,8 @@ export default function MonthGrid({ cells, periodByDay, eventsByDay, todayKey, o
                 <span
                   className="text-xs font-medium ml-auto flex items-center justify-center rounded-full"
                   style={{
-                    color: isToday ? '#fff' : cell.inMonth ? '#131A2A' : '#8A93A6',
-                    background: isToday ? '#2E5FCB' : 'transparent',
+                    color: isToday ? '#fff' : cell.inMonth ? 'var(--text)' : 'var(--text-3)',
+                    background: isToday ? 'var(--accent-solid)' : 'transparent',
                     width: 20, height: 20,
                   }}
                 >
@@ -63,9 +63,9 @@ export default function MonthGrid({ cells, periodByDay, eventsByDay, todayKey, o
                     onClick={(e) => { e.stopPropagation(); onEventClick(ev) }}
                     className="text-[10px] truncate rounded px-1 py-0.5 font-medium"
                     style={{
-                      background: ev.location_color ? hexToRgba(ev.location_color, 0.22) : '#EEF1F8',
-                      color: ev.location_color || '#4B5567',
-                      borderLeft: `2px solid ${ev.location_color || '#8A93A6'}`,
+                      background: ev.location_color ? hexToRgba(ev.location_color, 0.22) : 'var(--surface-2)',
+                      color: ev.location_color || 'var(--text-2)',
+                      borderLeft: `2px solid ${ev.location_color || 'var(--text-3)'}`,
                     }}
                     title={ev.title}
                   >
@@ -73,7 +73,7 @@ export default function MonthGrid({ cells, periodByDay, eventsByDay, todayKey, o
                   </span>
                 ))}
                 {dayEvents.length > 3 && (
-                  <span className="text-[10px]" style={{ color: '#8A93A6' }}>+{dayEvents.length - 3} mais</span>
+                  <span className="text-[10px]" style={{ color: 'var(--text-3)' }}>+{dayEvents.length - 3} mais</span>
                 )}
               </div>
             </button>

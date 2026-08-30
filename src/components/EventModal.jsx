@@ -64,15 +64,15 @@ export default function EventModal({ date, event, locations, onClose, onSaved, o
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(19,26,42,0.4)' }}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'var(--overlay)' }}>
       <form onSubmit={handleSubmit} className="w-full max-w-md rounded-2xl p-5 animate-fade-in"
-        style={{ background: '#FFFFFF', border: '1px solid #E2E6EF' }}>
+        style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-base font-semibold" style={{ color: '#131A2A' }}>
+          <h2 className="text-base font-semibold" style={{ color: 'var(--text)' }}>
             {isEdit ? 'Editar evento' : 'Novo evento'}
           </h2>
-          <button type="button" onClick={onClose} className="p-1 rounded hover:bg-gray-100">
-            <X size={16} style={{ color: '#8A93A6' }} />
+          <button type="button" onClick={onClose} className="p-1 rounded hover:bg-[var(--surface-2)]">
+            <X size={16} style={{ color: 'var(--text-3)' }} />
           </button>
         </div>
 
@@ -83,42 +83,42 @@ export default function EventModal({ date, event, locations, onClose, onSaved, o
             onChange={e => setTitle(e.target.value)}
             placeholder="Título do evento"
             className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-            style={{ border: '1px solid #E2E6EF' }}
+            style={{ border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)' }}
           />
 
-          <label className="flex items-center gap-2 text-sm" style={{ color: '#4B5567' }}>
+          <label className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-2)' }}>
             <input type="checkbox" checked={allDay} onChange={e => setAllDay(e.target.checked)}
-              style={{ accentColor: '#2E5FCB' }} />
+              style={{ accentColor: 'var(--accent-solid)' }} />
             Dia inteiro
           </label>
 
           <div className="grid grid-cols-2 gap-2">
             <div className="flex flex-col gap-1">
-              <span className="text-[11px] font-medium" style={{ color: '#8A93A6' }}>Início</span>
+              <span className="text-[11px] font-medium" style={{ color: 'var(--text-3)' }}>Início</span>
               <div className="flex gap-1">
                 <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
-                  className="flex-1 px-2 py-1.5 rounded-lg text-sm" style={{ border: '1px solid #E2E6EF' }} />
+                  className="flex-1 px-2 py-1.5 rounded-lg text-sm" style={{ border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)' }} />
                 {!allDay && (
                   <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)}
-                    className="w-24 px-2 py-1.5 rounded-lg text-sm" style={{ border: '1px solid #E2E6EF' }} />
+                    className="w-24 px-2 py-1.5 rounded-lg text-sm" style={{ border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)' }} />
                 )}
               </div>
             </div>
             <div className="flex flex-col gap-1">
-              <span className="text-[11px] font-medium" style={{ color: '#8A93A6' }}>Fim</span>
+              <span className="text-[11px] font-medium" style={{ color: 'var(--text-3)' }}>Fim</span>
               <div className="flex gap-1">
                 <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
-                  className="flex-1 px-2 py-1.5 rounded-lg text-sm" style={{ border: '1px solid #E2E6EF' }} />
+                  className="flex-1 px-2 py-1.5 rounded-lg text-sm" style={{ border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)' }} />
                 {!allDay && (
                   <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)}
-                    className="w-24 px-2 py-1.5 rounded-lg text-sm" style={{ border: '1px solid #E2E6EF' }} />
+                    className="w-24 px-2 py-1.5 rounded-lg text-sm" style={{ border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)' }} />
                 )}
               </div>
             </div>
           </div>
 
           <select value={locationId} onChange={e => setLocationId(e.target.value)}
-            className="w-full px-3 py-2 rounded-lg text-sm" style={{ border: '1px solid #E2E6EF', color: '#131A2A' }}>
+            className="w-full px-3 py-2 rounded-lg text-sm" style={{ border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)' }}>
             <option value="">Sem localização</option>
             {locations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
           </select>
@@ -129,21 +129,21 @@ export default function EventModal({ date, event, locations, onClose, onSaved, o
             placeholder="Notas (opcional)"
             rows={3}
             className="w-full px-3 py-2 rounded-lg text-sm outline-none resize-none"
-            style={{ border: '1px solid #E2E6EF' }}
+            style={{ border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)' }}
           />
         </div>
 
         <div className="flex items-center justify-between mt-5">
           {isEdit ? (
             <button type="button" onClick={handleDelete} disabled={saving}
-              className="flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg hover:bg-red-50"
-              style={{ color: '#DC2626' }}>
+              className="flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg hover:bg-[var(--danger-soft)]"
+              style={{ color: 'var(--danger)' }}>
               <Trash2 size={14} /> Apagar
             </button>
           ) : <span />}
           <button type="submit" disabled={saving}
             className="px-4 py-2 rounded-lg text-sm font-semibold text-white"
-            style={{ background: '#2E5FCB' }}>
+            style={{ background: 'var(--accent-solid)' }}>
             {isEdit ? 'Guardar' : 'Criar evento'}
           </button>
         </div>

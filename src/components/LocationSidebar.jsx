@@ -59,43 +59,43 @@ export default function LocationSidebar({ locations, onClose, onChanged, onMarkP
   }
 
   return (
-    <div className="fixed inset-0 z-40 flex justify-end" style={{ background: 'rgba(19,26,42,0.3)' }} onClick={onClose}>
-      <div className="w-full max-w-xs h-full flex flex-col animate-fade-in" style={{ background: '#FFFFFF' }}
+    <div className="fixed inset-0 z-40 flex justify-end" style={{ background: 'var(--overlay)' }} onClick={onClose}>
+      <div className="w-full max-w-xs h-full flex flex-col animate-fade-in" style={{ background: 'var(--surface)' }}
         onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between p-4" style={{ borderBottom: '1px solid #E2E6EF' }}>
-          <h2 className="text-sm font-semibold" style={{ color: '#131A2A' }}>Localizações</h2>
-          <button onClick={onClose} className="p-1 rounded hover:bg-gray-100">
-            <X size={16} style={{ color: '#8A93A6' }} />
+        <div className="flex items-center justify-between p-4" style={{ borderBottom: '1px solid var(--border)' }}>
+          <h2 className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Localizações</h2>
+          <button onClick={onClose} className="p-1 rounded hover:bg-[var(--surface-2)]">
+            <X size={16} style={{ color: 'var(--text-3)' }} />
           </button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2">
           {locations.length === 0 && (
-            <p className="text-xs" style={{ color: '#8A93A6' }}>Ainda não tens localizações. Cria a primeira em baixo.</p>
+            <p className="text-xs" style={{ color: 'var(--text-3)' }}>Ainda não tens localizações. Cria a primeira em baixo.</p>
           )}
           {locations.map(loc => (
-            <div key={loc.id} className="rounded-lg p-2" style={{ border: '1px solid #EEF1F8' }}>
+            <div key={loc.id} className="rounded-lg p-2" style={{ border: '1px solid var(--border)' }}>
               {editingId === loc.id ? (
                 <div className="flex items-center gap-2">
                   <input type="color" value={editColor} onChange={e => setEditColor(e.target.value)}
                     className="w-7 h-7 rounded cursor-pointer" style={{ border: 'none', padding: 0 }} />
                   <input value={editName} onChange={e => setEditName(e.target.value)}
-                    className="flex-1 px-2 py-1 rounded text-sm" style={{ border: '1px solid #E2E6EF' }}
+                    className="flex-1 px-2 py-1 rounded text-sm" style={{ border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)' }}
                     onKeyDown={e => e.key === 'Enter' && saveEdit(loc.id)} autoFocus />
-                  <button onClick={() => saveEdit(loc.id)} className="text-xs font-semibold" style={{ color: '#2E5FCB' }}>OK</button>
+                  <button onClick={() => saveEdit(loc.id)} className="text-xs font-semibold" style={{ color: 'var(--accent)' }}>OK</button>
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
                   <span className="w-3.5 h-3.5 rounded-full flex-shrink-0" style={{ background: loc.color }} />
-                  <span className="flex-1 text-sm truncate" style={{ color: '#131A2A' }}>{loc.name}</span>
-                  <button onClick={() => onMarkPeriod(loc)} title="Marcar período" className="p-1 rounded hover:bg-gray-100">
-                    <CalendarPlus size={14} style={{ color: '#8A93A6' }} />
+                  <span className="flex-1 text-sm truncate" style={{ color: 'var(--text)' }}>{loc.name}</span>
+                  <button onClick={() => onMarkPeriod(loc)} title="Marcar período" className="p-1 rounded hover:bg-[var(--surface-2)]">
+                    <CalendarPlus size={14} style={{ color: 'var(--text-3)' }} />
                   </button>
-                  <button onClick={() => startEdit(loc)} title="Editar" className="p-1 rounded hover:bg-gray-100">
-                    <Pencil size={14} style={{ color: '#8A93A6' }} />
+                  <button onClick={() => startEdit(loc)} title="Editar" className="p-1 rounded hover:bg-[var(--surface-2)]">
+                    <Pencil size={14} style={{ color: 'var(--text-3)' }} />
                   </button>
-                  <button onClick={() => handleDelete(loc)} title="Apagar" className="p-1 rounded hover:bg-gray-100">
-                    <Trash2 size={14} style={{ color: '#8A93A6' }} />
+                  <button onClick={() => handleDelete(loc)} title="Apagar" className="p-1 rounded hover:bg-[var(--surface-2)]">
+                    <Trash2 size={14} style={{ color: 'var(--text-3)' }} />
                   </button>
                 </div>
               )}
@@ -103,13 +103,13 @@ export default function LocationSidebar({ locations, onClose, onChanged, onMarkP
           ))}
         </div>
 
-        <form onSubmit={handleCreate} className="p-4 flex items-center gap-2" style={{ borderTop: '1px solid #E2E6EF' }}>
+        <form onSubmit={handleCreate} className="p-4 flex items-center gap-2" style={{ borderTop: '1px solid var(--border)' }}>
           <input type="color" value={color} onChange={e => setColor(e.target.value)}
             className="w-8 h-8 rounded cursor-pointer flex-shrink-0" style={{ border: 'none', padding: 0 }} />
           <input value={name} onChange={e => setName(e.target.value)} placeholder="Nova localização"
-            className="flex-1 px-3 py-2 rounded-lg text-sm" style={{ border: '1px solid #E2E6EF' }} />
+            className="flex-1 px-3 py-2 rounded-lg text-sm" style={{ border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)' }} />
           <button type="submit" disabled={saving || !name.trim()}
-            className="p-2 rounded-lg text-white flex-shrink-0" style={{ background: '#2E5FCB' }}>
+            className="p-2 rounded-lg text-white flex-shrink-0" style={{ background: 'var(--accent-solid)' }}>
             <Plus size={16} />
           </button>
         </form>
