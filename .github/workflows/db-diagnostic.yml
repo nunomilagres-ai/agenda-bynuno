@@ -2,6 +2,9 @@ name: Diagnóstico da base de dados (manual)
 
 on:
   workflow_dispatch: {}
+  push:
+    branches: [claude/agenda-bynuno-cloudflare-deploy-i7arml]
+    paths: ['.github/workflows/db-diagnostic.yml']
 
 jobs:
   diagnose:
