@@ -47,6 +47,9 @@ export default function MonthGrid({ cells, periodByDay, eventsByDay, todayKey, o
       </div>
       <div className="grid grid-cols-7 flex-1 min-h-0" style={{ gridAutoRows: '1fr' }}>
         {cells.map((cell) => {
+          if (cell.blank) {
+            return <div key={cell.key} style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', opacity: 0.4 }} />
+          }
           const period = periodByDay[cell.key]
           const dayEvents = eventsByDay[cell.key] || []
           const isToday = cell.key === todayKey
@@ -55,8 +58,8 @@ export default function MonthGrid({ cells, periodByDay, eventsByDay, todayKey, o
           const isWeekend = dow === 0 || dow === 6
           const inSelection = dragging && cell.key >= selMin && cell.key <= selMax
           const bg = period
-            ? hexToRgba(period.location_color, cell.inMonth ? 0.16 : 0.08)
-            : (cell.inMonth ? (isWeekend ? 'var(--surface-2)' : 'var(--surface)') : 'var(--surface-2)')
+            ? hexToRgba(period.location_color, 0.16)
+            : (isWeekend ? 'var(--surface-2)' : 'var(--surface)')
 
           return (
             <button
@@ -67,7 +70,6 @@ export default function MonthGrid({ cells, periodByDay, eventsByDay, todayKey, o
               style={{
                 background: inSelection ? 'var(--accent-soft)' : bg,
                 border: inSelection ? '1px solid var(--accent)' : '1px solid var(--border)',
-                opacity: cell.inMonth ? 1 : 0.6,
               }}
             >
               <div className="flex items-center justify-between mb-1">
@@ -84,7 +86,7 @@ export default function MonthGrid({ cells, periodByDay, eventsByDay, todayKey, o
                   title={holiday?.name}
                   className="text-xs font-medium ml-auto flex items-center justify-center rounded-full"
                   style={{
-                    color: isToday ? '#fff' : holiday ? 'var(--danger)' : cell.inMonth ? 'var(--text)' : 'var(--text-3)',
+                    color: isToday ? '#fff' : holiday ? 'var(--danger)' : 'var(--text)',
                     background: isToday ? 'var(--accent-solid)' : 'transparent',
                     width: 20, height: 20,
                   }}

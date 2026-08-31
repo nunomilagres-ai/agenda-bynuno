@@ -20,30 +20,27 @@ export function daysInMonth(year, month) { return new Date(year, month + 1, 0).g
 export function firstWeekday(year, month) { return (new Date(year, month, 1).getDay() + 6) % 7 }
 
 /**
- * Build the full grid of date keys for a month view, including leading/trailing
- * days from adjacent months so every row has 7 days.
+ * Build the grid of date keys for a single month view — only this month's own
+ * days. Leading/trailing cells needed to align to the weekday grid are blank
+ * placeholders (no date), not borrowed days from the adjacent month: with the
+ * calendar as a continuous vertical scroll, the adjacent month already has
+ * its own section right below/above, so repeating its days would be redundant.
  */
 export function buildMonthGrid(year, month) {
   const first = firstWeekday(year, month)
   const total = daysInMonth(year, month)
-  const prevMonth = month === 0 ? 11 : month - 1
-  const prevYear = month === 0 ? year - 1 : year
-  const prevTotal = daysInMonth(prevYear, prevMonth)
-  const nextMonth = month === 11 ? 0 : month + 1
-  const nextYear = month === 11 ? year + 1 : year
 
   const cells = []
   for (let i = 0; i < first; i++) {
-    cells.push({ day: prevTotal - first + 1 + i, month: prevMonth, year: prevYear, inMonth: false })
+    cells.push({ blank: true, key: `blank-lead-${year}-${month}-${i}` })
   }
   for (let d = 1; d <= total; d++) {
-    cells.push({ day: d, month, year, inMonth: true })
+    cells.push({ day: d, month, year, inMonth: true, key: dateKey(year, month, d) })
   }
-  let nextDay = 1
-  while (cells.length < 42) {
-    cells.push({ day: nextDay++, month: nextMonth, year: nextYear, inMonth: false })
+  while (cells.length % 7 !== 0) {
+    cells.push({ blank: true, key: `blank-trail-${year}-${month}-${cells.length}` })
   }
-  return cells.map(c => ({ ...c, key: dateKey(c.year, c.month, c.day) }))
+  return cells
 }
 
 export function isoToDate(iso) { return iso ? iso.slice(0, 10) : '' }
