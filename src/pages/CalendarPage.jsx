@@ -4,7 +4,7 @@ import { Plus, MapPin, LogOut, CalendarPlus, Printer, ChevronUp, ChevronDown } f
 import { toast } from 'sonner'
 import { useAuth } from '@/lib/AuthContext'
 import { api } from '@/lib/api'
-import { MONTH_NAMES, buildMonthGrid, todayKey } from '@/lib/dateUtils'
+import { MONTH_NAMES, buildMonthGrid, todayKey, dateKey, daysInMonth } from '@/lib/dateUtils'
 import MonthGrid from '@/components/MonthGrid'
 import EventModal from '@/components/EventModal'
 import LocationSidebar from '@/components/LocationSidebar'
@@ -55,8 +55,14 @@ export default function CalendarPage() {
     () => monthsWindow.map(({ year, month }) => ({ year, month, key: monthKey(year, month), cells: buildMonthGrid(year, month) })),
     [monthsWindow]
   )
-  const rangeStart = monthsCells[0].cells[0].key
-  const rangeEnd = monthsCells[monthsCells.length - 1].cells.at(-1).key
+  // Datas reais do 1º e último dia da janela — nunca derivadas das células da
+  // grelha, porque desde que deixámos de repetir dias do mês adjacente a
+  // primeira/última célula de um mês pode ser um espaço em branco (sem data
+  // válida), o que partia o intervalo pedido à API (perdia eventos/períodos).
+  const firstMonth = monthsWindow[0]
+  const lastMonth = monthsWindow[monthsWindow.length - 1]
+  const rangeStart = dateKey(firstMonth.year, firstMonth.month, 1)
+  const rangeEnd = dateKey(lastMonth.year, lastMonth.month, daysInMonth(lastMonth.year, lastMonth.month))
 
   const loadData = useCallback(async () => {
     setLoading(true)

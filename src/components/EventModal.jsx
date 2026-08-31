@@ -30,14 +30,15 @@ export default function EventModal({ date, event, locations, onClose, onSaved, o
   const [startTime, setStartTime] = useState(event ? isoToTime(event.start_datetime) : '09:00')
   const [endDate, setEndDate] = useState(event ? isoToDate(event.end_datetime) : date)
   const [endTime, setEndTime] = useState(event ? isoToTime(event.end_datetime) : '10:00')
-  const [isBirthdayFlag, setIsBirthdayFlag] = useState(isBirthday)
+  const [eventType, setEventType] = useState(event?.event_type || '')
   const [recurrenceFreq, setRecurrenceFreq] = useState(event?.recurrence_freq || '')
   const [recurrenceUntil, setRecurrenceUntil] = useState(event?.recurrence_until || '')
   const [saving, setSaving] = useState(false)
+  const isBirthdayFlag = eventType === 'birthday'
 
-  function toggleBirthday(checked) {
-    setIsBirthdayFlag(checked)
-    if (checked) { setRecurrenceFreq('yearly'); setRecurrenceUntil('') }
+  function changeEventType(value) {
+    setEventType(value)
+    if (value === 'birthday') { setRecurrenceFreq('yearly'); setRecurrenceUntil('') }
   }
 
   async function handleSubmit(e) {
@@ -63,7 +64,7 @@ export default function EventModal({ date, event, locations, onClose, onSaved, o
           ...basePayload,
           recurrence_freq: recurrenceFreq || null,
           recurrence_until: recurrenceFreq ? (recurrenceUntil || null) : null,
-          event_type: isBirthdayFlag ? 'birthday' : null,
+          event_type: eventType || null,
         }
         if (isEdit) {
           await api.events.update(event.id, payload)
@@ -168,11 +169,15 @@ export default function EventModal({ date, event, locations, onClose, onSaved, o
             </p>
           ) : (
             <>
-              <label className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-2)' }}>
-                <input type="checkbox" checked={isBirthdayFlag} onChange={e => toggleBirthday(e.target.checked)}
-                  style={{ accentColor: 'var(--accent-solid)' }} />
-                🎂 É um aniversário (repete todos os anos; sem edição por ocorrência)
-              </label>
+              <div className="flex flex-col gap-1">
+                <span className="text-[11px] font-medium" style={{ color: 'var(--text-3)' }}>Tipo de evento</span>
+                <select value={eventType} onChange={e => changeEventType(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg text-sm" style={{ border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)' }}>
+                  <option value="">Normal</option>
+                  <option value="birthday">🎂 Aniversário (repete todos os anos; sem edição por ocorrência)</option>
+                  <option value="vacation">🏖️ Férias (fundo do dia como um feriado)</option>
+                </select>
+              </div>
               {!isBirthdayFlag && (
                 <div className="flex gap-2">
                   <select value={recurrenceFreq} onChange={e => setRecurrenceFreq(e.target.value)}

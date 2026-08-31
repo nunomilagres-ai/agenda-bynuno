@@ -13,7 +13,8 @@ Calendário pessoal estilo Outlook: meses em scroll vertical contínuo, células
 - **Localizações**: criadas por ti (nome + cor) — Porto, Lisboa, Vila Real, ou outras.
 - **Períodos de localização**: marca "estarei em X de A a B" — tinge as células desses dias na grelha, sem criar um evento. Marca-se arrastando sobre os dias na grelha (o intervalo fica logo preenchido, só falta escolher a localização).
 - **Eventos**: reuniões/compromissos correntes, opcionalmente associados a uma localização (cor do chip). Podem repetir-se (semanal, quinzenal, de 3 em 3 semanas, mensal, anual) — ver "Recorrência" abaixo.
-- **Feriados**: os 13 feriados nacionais obrigatórios (incluindo os móveis, calculados a partir da Páscoa) e o feriado municipal de Santo António (Lisboa e Vila Real) aparecem automaticamente a vermelho na grelha. Fins de semana têm um fundo ligeiramente diferente.
+- **Feriados**: os 13 feriados nacionais obrigatórios (incluindo os móveis, calculados a partir da Páscoa) e o feriado municipal de Santo António (Lisboa e Vila Real) aparecem automaticamente a vermelho, com o dia inteiro tingido, na grelha. Fins de semana têm um fundo visivelmente diferente (mais acentuado que os dias úteis).
+- **Férias** (`event_type = 'vacation'`): tipo de evento igual a um evento normal em tudo (recorrência opcional, edição por ocorrência), exceto visualmente — os dias que cobre ficam tingidos com o mesmo fundo usado nos feriados.
 - **Impressão**: botão de imprimir no cabeçalho, sempre em formato paisagem; a impressão/PDF força tema claro, esconde os controlos e mostra só o mês atualmente visível no ecrã.
 - **Navegação**: scroll vertical contínuo entre meses (sem paginação mês-a-mês) — a lista carrega 13 meses de início (6 antes/depois de hoje) e estende-se com "Meses anteriores/seguintes" nas pontas. "Hoje" salta sempre para o mês atual.
 

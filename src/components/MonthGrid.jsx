@@ -54,12 +54,15 @@ export default function MonthGrid({ cells, periodByDay, eventsByDay, todayKey, o
           const dayEvents = eventsByDay[cell.key] || []
           const isToday = cell.key === todayKey
           const holiday = getHoliday(cell.key)
+          const isVacation = dayEvents.some(ev => ev.event_type === 'vacation')
           const dow = new Date(cell.key + 'T00:00:00Z').getUTCDay()
           const isWeekend = dow === 0 || dow === 6
           const inSelection = dragging && cell.key >= selMin && cell.key <= selMax
           const bg = period
             ? hexToRgba(period.location_color, 0.16)
-            : (isWeekend ? 'var(--surface-2)' : 'var(--surface)')
+            : (holiday || isVacation)
+              ? 'var(--danger-soft)'
+              : (isWeekend ? 'var(--weekend-bg)' : 'var(--surface)')
 
           return (
             <button
