@@ -40,6 +40,10 @@ Publicado automaticamente via GitHub Actions (`.github/workflows/deploy.yml`) a 
 alteração em `master`: cria a base de dados D1 se ainda não existir, corre o schema,
 faz build e publica no Cloudflare Pages, incluindo o domínio `agenda.bynuno.com`.
 
+Nota: um squash-merge cuja mensagem final ainda inclua `[skip-deploy]` (herdado
+de um commit intermédio da branch) salta o deploy inteiro — se isso acontecer,
+o próximo commit em `master` sem essa marca volta a publicar normalmente.
+
 Único passo manual (uma única vez): adicionar o secret `CLOUDFLARE_API_TOKEN` nas
 definições do repositório GitHub (Settings → Secrets and variables → Actions).
 Token criado em dash.cloudflare.com/profile/api-tokens usando o template
