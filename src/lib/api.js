@@ -31,6 +31,9 @@ export const api = {
     create: (d)           => fetch('/api/events', { method: 'POST', headers: J, body: JSON.stringify(d) }).then(handle),
     update: (id, d)        => fetch(`/api/events/${realId(id)}`, { method: 'PUT', headers: J, body: JSON.stringify(d) }).then(handle),
     delete: (id)           => fetch(`/api/events/${realId(id)}`, { method: 'DELETE' }).then(handle),
+    // Uma única ocorrência de uma série (nunca para aniversários) — masterId sem sufixo, date = occurrence_date.
+    updateOccurrence: (masterId, date, d) => fetch(`/api/events/${masterId}/occurrence/${date}`, { method: 'PUT', headers: J, body: JSON.stringify(d) }).then(handle),
+    deleteOccurrence: (masterId, date)    => fetch(`/api/events/${masterId}/occurrence/${date}`, { method: 'DELETE' }).then(handle),
   },
 }
 

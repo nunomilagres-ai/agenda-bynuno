@@ -15,7 +15,7 @@ export async function onRequestGet({ request, env }) {
 
   let query = `
     SELECT e.id, e.title, e.description, e.start_datetime, e.end_datetime, e.all_day,
-           e.location_id, e.recurrence_freq, e.recurrence_until,
+           e.location_id, e.recurrence_freq, e.recurrence_until, e.event_type,
            l.name AS location_name, l.color AS location_color
     FROM events e
     LEFT JOIN locations l ON l.id = e.location_id
@@ -36,9 +36,25 @@ export async function onRequestGet({ request, env }) {
 
   const { results } = await env.DB.prepare(query).bind(...binds).all();
 
-  const events = start && end
-    ? results.flatMap(e => expandEvent(e, start, end)).sort((a, b) => a.start_datetime < b.start_datetime ? -1 : 1)
-    : results;
+  let events = results;
+  if (start && end) {
+    const recurringIds = results.filter(e => e.recurrence_freq && e.event_type !== 'birthday').map(e => e.id);
+    const exceptionsByEvent = {};
+    if (recurringIds.length) {
+      const placeholders = recurringIds.map(() => '?').join(',');
+      const { results: exRows } = await env.DB.prepare(
+        `SELECT ex.*, l.name AS location_name, l.color AS location_color
+         FROM event_exceptions ex LEFT JOIN locations l ON l.id = ex.location_id
+         WHERE ex.event_id IN (${placeholders})`
+      ).bind(...recurringIds).all();
+      for (const ex of exRows) {
+        (exceptionsByEvent[ex.event_id] ??= {})[ex.occurrence_date] = ex;
+      }
+    }
+    events = results
+      .flatMap(e => expandEvent(e, exceptionsByEvent[e.id], start, end))
+      .sort((a, b) => (a.start_datetime < b.start_datetime ? -1 : 1));
+  }
 
   return json(events);
 }
@@ -66,11 +82,13 @@ export async function onRequestPost({ request, env }) {
     if (!loc) locationId = null;
   }
 
-  let recurrenceFreq = body.recurrence_freq || null;
+  const eventType = body.event_type === 'birthday' ? 'birthday' : null;
+
+  let recurrenceFreq = eventType === 'birthday' ? 'yearly' : (body.recurrence_freq || null);
   if (recurrenceFreq && !RECURRENCE_FREQS.includes(recurrenceFreq)) {
     return badRequest('recurrence_freq inválida');
   }
-  const recurrenceUntil = recurrenceFreq ? (body.recurrence_until || null) : null;
+  const recurrenceUntil = eventType === 'birthday' ? null : (recurrenceFreq ? (body.recurrence_until || null) : null);
 
   const id = gid();
   const ts = now();
@@ -78,13 +96,13 @@ export async function onRequestPost({ request, env }) {
   const description = body.description || null;
 
   await env.DB.prepare(
-    `INSERT INTO events (id, user_id, title, description, start_datetime, end_datetime, all_day, location_id, recurrence_freq, recurrence_until, created_date, updated_date)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).bind(id, user.id, title, description, startDatetime, endDatetime, allDay, locationId, recurrenceFreq, recurrenceUntil, ts, ts).run();
+    `INSERT INTO events (id, user_id, title, description, start_datetime, end_datetime, all_day, location_id, recurrence_freq, recurrence_until, event_type, created_date, updated_date)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).bind(id, user.id, title, description, startDatetime, endDatetime, allDay, locationId, recurrenceFreq, recurrenceUntil, eventType, ts, ts).run();
 
   return json({
     id, title, description, start_datetime: startDatetime, end_datetime: endDatetime,
     all_day: allDay, location_id: locationId, recurrence_freq: recurrenceFreq, recurrence_until: recurrenceUntil,
-    created_date: ts, updated_date: ts,
+    event_type: eventType, created_date: ts, updated_date: ts,
   }, 201);
 }

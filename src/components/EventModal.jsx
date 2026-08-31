@@ -16,7 +16,12 @@ const RECURRENCE_OPTIONS = [
 
 export default function EventModal({ date, event, locations, onClose, onSaved, onDeleted }) {
   const isEdit = !!event
-  const isRecurringOccurrence = isEdit && String(event.id).includes('::')
+  const isBirthday = isEdit && event.event_type === 'birthday'
+  // Série normal (não-aniversário): cada ocorrência, incluindo a primeira, é
+  // editável/apagável isoladamente — nunca afeta as restantes.
+  const isDetachable = isEdit && !!event.recurrence_freq && !isBirthday
+  const masterId = isEdit ? String(event.id).split('::')[0] : null
+
   const [title, setTitle] = useState(event?.title || '')
   const [description, setDescription] = useState(event?.description || '')
   const [locationId, setLocationId] = useState(event?.location_id || '')
@@ -25,33 +30,48 @@ export default function EventModal({ date, event, locations, onClose, onSaved, o
   const [startTime, setStartTime] = useState(event ? isoToTime(event.start_datetime) : '09:00')
   const [endDate, setEndDate] = useState(event ? isoToDate(event.end_datetime) : date)
   const [endTime, setEndTime] = useState(event ? isoToTime(event.end_datetime) : '10:00')
+  const [isBirthdayFlag, setIsBirthdayFlag] = useState(isBirthday)
   const [recurrenceFreq, setRecurrenceFreq] = useState(event?.recurrence_freq || '')
   const [recurrenceUntil, setRecurrenceUntil] = useState(event?.recurrence_until || '')
   const [saving, setSaving] = useState(false)
+
+  function toggleBirthday(checked) {
+    setIsBirthdayFlag(checked)
+    if (checked) { setRecurrenceFreq('yearly'); setRecurrenceUntil('') }
+  }
 
   async function handleSubmit(e) {
     e.preventDefault()
     if (!title.trim()) { toast.error('O título é obrigatório'); return }
 
-    const payload = {
+    const basePayload = {
       title: title.trim(),
       description: description.trim() || null,
       location_id: locationId || null,
       all_day: allDay,
       start_datetime: allDay ? startDate : combineDatetime(startDate, startTime),
       end_datetime: allDay ? endDate : combineDatetime(endDate, endTime),
-      recurrence_freq: recurrenceFreq || null,
-      recurrence_until: recurrenceFreq ? (recurrenceUntil || null) : null,
     }
 
     setSaving(true)
     try {
-      if (isEdit) {
-        await api.events.update(event.id, payload)
-        toast.success('Evento atualizado')
+      if (isDetachable) {
+        await api.events.updateOccurrence(masterId, event.occurrence_date, basePayload)
+        toast.success('Ocorrência atualizada')
       } else {
-        await api.events.create(payload)
-        toast.success('Evento criado')
+        const payload = {
+          ...basePayload,
+          recurrence_freq: recurrenceFreq || null,
+          recurrence_until: recurrenceFreq ? (recurrenceUntil || null) : null,
+          event_type: isBirthdayFlag ? 'birthday' : null,
+        }
+        if (isEdit) {
+          await api.events.update(event.id, payload)
+          toast.success('Evento atualizado')
+        } else {
+          await api.events.create(payload)
+          toast.success('Evento criado')
+        }
       }
       onSaved()
       onClose()
@@ -63,11 +83,16 @@ export default function EventModal({ date, event, locations, onClose, onSaved, o
   }
 
   async function handleDelete() {
-    if (!confirm('Apagar este evento?')) return
+    if (!confirm(isDetachable ? 'Remover esta ocorrência?' : 'Apagar este evento?')) return
     setSaving(true)
     try {
-      await api.events.delete(event.id)
-      toast.success('Evento apagado')
+      if (isDetachable) {
+        await api.events.deleteOccurrence(masterId, event.occurrence_date)
+        toast.success('Ocorrência removida')
+      } else {
+        await api.events.delete(event.id)
+        toast.success('Evento apagado')
+      }
       onDeleted()
       onClose()
     } catch (err) {
@@ -137,21 +162,41 @@ export default function EventModal({ date, event, locations, onClose, onSaved, o
             {locations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
           </select>
 
-          <div className="flex gap-2">
-            <select value={recurrenceFreq} onChange={e => setRecurrenceFreq(e.target.value)}
-              className="flex-1 px-3 py-2 rounded-lg text-sm" style={{ border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)' }}>
-              {RECURRENCE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
-            {recurrenceFreq && (
-              <input type="date" value={recurrenceUntil} onChange={e => setRecurrenceUntil(e.target.value)}
-                title="Repetir até (opcional)"
-                className="px-2 py-1.5 rounded-lg text-sm w-36" style={{ border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)' }} />
-            )}
-          </div>
-          {isRecurringOccurrence && (
+          {isDetachable ? (
             <p className="text-[11px] -mt-1" style={{ color: 'var(--text-3)' }}>
-              Este evento faz parte de uma série. Guardar ou apagar aplica-se a toda a série.
+              Esta é uma ocorrência de uma série recorrente — guardar ou apagar afeta só este dia, nunca a série.
             </p>
+          ) : (
+            <>
+              <label className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-2)' }}>
+                <input type="checkbox" checked={isBirthdayFlag} onChange={e => toggleBirthday(e.target.checked)}
+                  style={{ accentColor: 'var(--accent-solid)' }} />
+                🎂 É um aniversário (repete todos os anos; sem edição por ocorrência)
+              </label>
+              {!isBirthdayFlag && (
+                <div className="flex gap-2">
+                  <select value={recurrenceFreq} onChange={e => setRecurrenceFreq(e.target.value)}
+                    className="flex-1 px-3 py-2 rounded-lg text-sm" style={{ border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)' }}>
+                    {RECURRENCE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  </select>
+                  {recurrenceFreq && (
+                    <input type="date" value={recurrenceUntil} onChange={e => setRecurrenceUntil(e.target.value)}
+                      title="Repetir até (opcional)"
+                      className="px-2 py-1.5 rounded-lg text-sm w-36" style={{ border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)' }} />
+                  )}
+                </div>
+              )}
+              {isBirthday && (
+                <p className="text-[11px] -mt-1" style={{ color: 'var(--text-3)' }}>
+                  Aniversário — a alteração aplica-se a todos os anos.
+                </p>
+              )}
+              {isEdit && recurrenceFreq && !isBirthdayFlag && (
+                <p className="text-[11px] -mt-1" style={{ color: 'var(--text-3)' }}>
+                  Isto altera o padrão da série a partir de agora — as ocorrências já editadas isoladamente mantêm-se.
+                </p>
+              )}
+            </>
           )}
 
           <textarea
@@ -169,7 +214,7 @@ export default function EventModal({ date, event, locations, onClose, onSaved, o
             <button type="button" onClick={handleDelete} disabled={saving}
               className="flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg hover:bg-[var(--danger-soft)]"
               style={{ color: 'var(--danger)' }}>
-              <Trash2 size={14} /> Apagar
+              <Trash2 size={14} /> {isDetachable ? 'Remover ocorrência' : 'Apagar'}
             </button>
           ) : <span />}
           <button type="submit" disabled={saving}

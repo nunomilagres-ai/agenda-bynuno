@@ -1,6 +1,6 @@
 # agenda.bynuno.com
 
-Calendário pessoal estilo Outlook: vista mensal, células coloridas por localização (Porto, Lisboa, Vila Real, ...) e eventos correntes.
+Calendário pessoal estilo Outlook: meses em scroll vertical contínuo, células coloridas por localização (Porto, Lisboa, Vila Real, ...) e eventos correntes.
 
 ## Stack
 - **Frontend**: React 18 + Vite + Tailwind CSS
@@ -14,15 +14,24 @@ Calendário pessoal estilo Outlook: vista mensal, células coloridas por localiz
 - **Períodos de localização**: marca "estarei em X de A a B" — tinge as células desses dias na grelha, sem criar um evento. Marca-se arrastando sobre os dias na grelha (o intervalo fica logo preenchido, só falta escolher a localização).
 - **Eventos**: reuniões/compromissos correntes, opcionalmente associados a uma localização (cor do chip). Podem repetir-se (semanal, quinzenal, de 3 em 3 semanas, mensal, anual) — ver "Recorrência" abaixo.
 - **Feriados**: os 13 feriados nacionais obrigatórios (incluindo os móveis, calculados a partir da Páscoa) e o feriado municipal de Santo António (Lisboa e Vila Real) aparecem automaticamente a vermelho na grelha. Fins de semana têm um fundo ligeiramente diferente.
-- **Impressão**: botão de imprimir no cabeçalho; a impressão/PDF força sempre o tema claro e esconde os controlos, independentemente do tema do ecrã.
+- **Impressão**: botão de imprimir no cabeçalho, sempre em formato paisagem; a impressão/PDF força tema claro, esconde os controlos e mostra só o mês atualmente visível no ecrã.
+- **Navegação**: scroll vertical contínuo entre meses (sem paginação mês-a-mês) — a lista carrega 13 meses de início (6 antes/depois de hoje) e estende-se com "Meses anteriores/seguintes" nas pontas. "Hoje" salta sempre para o mês atual.
 
 ### Recorrência
 
-Um evento recorrente é guardado como uma única linha na base de dados (a primeira
-ocorrência); as ocorrências seguintes são calculadas em runtime por
-`functions/_recurrence.js`, nunca gravadas. Simplificação assumida: editar ou apagar
-qualquer ocorrência edita/apaga a série inteira — não há edição de uma ocorrência
-isolada ("só este evento" vs. "todos").
+Um evento recorrente é guardado como uma única linha na base de dados — só o padrão
+(data-âncora, frequência, fim opcional); as ocorrências são calculadas em runtime por
+`functions/_recurrence.js`, nunca gravadas.
+
+Dois tipos:
+- **Aniversário** (`event_type = 'birthday'`): força frequência anual, sem fim.
+  Editar ou apagar afeta sempre a série inteira — não há edição por ocorrência
+  (não faz sentido um aniversário ter uma exceção só num ano).
+- **Normal**: cada ocorrência, incluindo a primeira, é editável/apagável
+  isoladamente. A alteração fica registada como uma exceção em
+  `event_exceptions` (override de campos, ou marcada como removida) e nunca
+  afeta as restantes ocorrências da série. Não há uma ação de "apagar a série
+  inteira" — só ocorrência a ocorrência.
 
 ## Deploy (automático)
 
@@ -78,15 +87,16 @@ functions/
     location-periods/index.js GET/POST /api/location-periods
     location-periods/[id].js  PUT/DELETE /api/location-periods/:id
     events/index.js           GET/POST /api/events (expande recorrências no GET)
-    events/[id].js            GET/PUT/DELETE /api/events/:id
+    events/[id].js            GET/PUT/DELETE /api/events/:id (série inteira)
+    events/[id]/occurrence/[date].js  PUT/DELETE de uma ocorrência isolada (não-aniversário)
 
 migrations/                   ALTER TABLE aplicados a cada deploy (tolerantes a já aplicados)
 
 src/
-  pages/CalendarPage.jsx      Vista mensal principal
+  pages/CalendarPage.jsx      Scroll vertical de meses, carregamento incremental
   components/
     MonthGrid.jsx             Grelha mensal (arrastar para marcar localização, feriados, fins de semana)
-    EventModal.jsx            Criar/editar evento, incl. recorrência
+    EventModal.jsx            Criar/editar evento, incl. recorrência e aniversários
     LocationSidebar.jsx       Gerir localizações e cores
     LocationPeriodModal.jsx   Marcar/editar período de localização
   lib/
@@ -97,16 +107,17 @@ src/
 ```
 
 ## Funcionalidades (v1)
-- Vista mensal estilo Outlook, navegação por mês + "Hoje"
+- Vista mensal estilo Outlook, em scroll vertical contínuo + "Hoje"
 - Localizações com cor personalizável, ilimitadas
 - Períodos de localização (multi-dia, marcados arrastando na grelha) que tingem os dias correspondentes
-- Eventos com dia inteiro ou hora específica, associáveis a uma localização, com recorrência opcional
+- Eventos com dia inteiro ou hora específica, associáveis a uma localização, com recorrência opcional (semanal a anual) e edição por ocorrência isolada
+- Aniversários: recorrência anual fixa, editada sempre como série
 - Feriados nacionais e municipais (Lisboa, Vila Real) e fins de semana assinalados na grelha
-- Impressão/PDF em tema claro, com um botão dedicado
+- Impressão/PDF em paisagem, tema claro, só o mês visível
 - Autenticação via byNuno Hub (Google OAuth)
 
 ## Próximos passos (fora do âmbito da v1)
 - Vista semanal/diária
 - Sincronização bidirecional com Microsoft Outlook (Microsoft Graph API — requer App Registration no Azure AD)
 - Sincronização com Google Calendar
-- Editar/apagar uma única ocorrência de um evento recorrente (hoje afeta sempre a série inteira)
+- Apagar a série inteira de um evento recorrente normal de uma só vez (hoje só ocorrência a ocorrência)
