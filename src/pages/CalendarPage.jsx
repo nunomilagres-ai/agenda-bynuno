@@ -1,6 +1,6 @@
-// CalendarPage.jsx — vista mensal principal
-import { useState, useEffect, useCallback, useMemo } from 'react'
-import { ChevronLeft, ChevronRight, Plus, MapPin, LogOut, CalendarPlus } from 'lucide-react'
+// CalendarPage.jsx — vista mensal, em scroll vertical contínuo (não paginado por mês)
+import { useState, useEffect, useLayoutEffect, useCallback, useMemo, useRef } from 'react'
+import { Plus, MapPin, LogOut, CalendarPlus, Printer, ChevronUp, ChevronDown } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuth } from '@/lib/AuthContext'
 import { api } from '@/lib/api'
@@ -10,11 +10,31 @@ import EventModal from '@/components/EventModal'
 import LocationSidebar from '@/components/LocationSidebar'
 import LocationPeriodModal from '@/components/LocationPeriodModal'
 
+const MONTHS_BEFORE = 6
+const MONTHS_AFTER = 6
+const LOAD_MORE_STEP = 6
+
+function monthKey(y, m) { return `${y}-${String(m + 1).padStart(2, '0')}` }
+function shiftYM(y, m, delta) {
+  const d = new Date(y, m + delta, 1)
+  return { year: d.getFullYear(), month: d.getMonth() }
+}
+function defaultWindow(today) {
+  const win = []
+  for (let i = -MONTHS_BEFORE; i <= MONTHS_AFTER; i++) {
+    win.push(shiftYM(today.getFullYear(), today.getMonth(), i))
+  }
+  return win
+}
+
 export default function CalendarPage() {
   const { user, logout } = useAuth()
-  const today = new Date()
-  const [year, setYear] = useState(today.getFullYear())
-  const [month, setMonth] = useState(today.getMonth())
+  const today = useMemo(() => new Date(), [])
+  const tKey = todayKey()
+  const todayMKey = monthKey(today.getFullYear(), today.getMonth())
+
+  const [monthsWindow, setMonthsWindow] = useState(() => defaultWindow(today))
+  const [activeMonthKey, setActiveMonthKey] = useState(todayMKey)
 
   const [locations, setLocations] = useState([])
   const [periods, setPeriods] = useState([])
@@ -23,12 +43,20 @@ export default function CalendarPage() {
 
   const [showLocations, setShowLocations] = useState(false)
   const [eventModal, setEventModal] = useState(null)   // { date } | { event }
-  const [periodModal, setPeriodModal] = useState(null) // { location } | null
+  const [periodModal, setPeriodModal] = useState(null) // { location } | { range } | { period }
 
-  const cells = useMemo(() => buildMonthGrid(year, month), [year, month])
-  const rangeStart = cells[0].key
-  const rangeEnd = cells[cells.length - 1].key
-  const tKey = todayKey()
+  const scrollRef = useRef(null)
+  const sectionRefs = useRef(new Map())
+  const prependHeightRef = useRef(null)
+  const scrollToTodayRef = useRef(true) // salta para hoje assim que as secções montarem
+
+  // cells por mês da janela carregada
+  const monthsCells = useMemo(
+    () => monthsWindow.map(({ year, month }) => ({ year, month, key: monthKey(year, month), cells: buildMonthGrid(year, month) })),
+    [monthsWindow]
+  )
+  const rangeStart = monthsCells[0].cells[0].key
+  const rangeEnd = monthsCells[monthsCells.length - 1].cells.at(-1).key
 
   const loadData = useCallback(async () => {
     setLoading(true)
@@ -50,20 +78,74 @@ export default function CalendarPage() {
 
   useEffect(() => { loadData() }, [loadData])
 
-  function prevMonth() { if (month === 0) { setMonth(11); setYear(y => y - 1) } else setMonth(m => m - 1) }
-  function nextMonth() { if (month === 11) { setMonth(0); setYear(y => y + 1) } else setMonth(m => m + 1) }
-  function goToday() { setYear(today.getFullYear()); setMonth(today.getMonth()) }
+  function loadEarlier() {
+    prependHeightRef.current = scrollRef.current?.scrollHeight ?? null
+    setMonthsWindow(w => {
+      const extra = []
+      for (let i = LOAD_MORE_STEP; i >= 1; i--) extra.push(shiftYM(w[0].year, w[0].month, -i))
+      return [...extra, ...w]
+    })
+  }
+  function loadLater() {
+    setMonthsWindow(w => {
+      const last = w[w.length - 1]
+      const extra = []
+      for (let i = 1; i <= LOAD_MORE_STEP; i++) extra.push(shiftYM(last.year, last.month, i))
+      return [...w, ...extra]
+    })
+  }
+
+  useLayoutEffect(() => {
+    if (prependHeightRef.current != null && scrollRef.current) {
+      const added = scrollRef.current.scrollHeight - prependHeightRef.current
+      scrollRef.current.scrollTop += added
+      prependHeightRef.current = null
+    }
+  }, [monthsWindow])
+
+  useEffect(() => {
+    if (scrollToTodayRef.current) {
+      scrollToTodayRef.current = false
+      sectionRefs.current.get(todayMKey)?.scrollIntoView({ block: 'start' })
+    }
+  }, [monthsWindow, todayMKey])
+
+  function goToday() {
+    if (sectionRefs.current.has(todayMKey)) {
+      sectionRefs.current.get(todayMKey).scrollIntoView({ behavior: 'smooth', block: 'start' })
+    } else {
+      scrollToTodayRef.current = true
+      setMonthsWindow(defaultWindow(today))
+    }
+  }
+
+  // Observa qual mês está visível no topo do scroll — usado só para saber o
+  // que imprimir (a impressão mostra apenas o mês atualmente visível).
+  useEffect(() => {
+    const root = scrollRef.current
+    if (!root) return
+    const observer = new IntersectionObserver((entries) => {
+      const visible = entries.filter(e => e.isIntersecting)
+      if (visible.length === 0) return
+      visible.sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)
+      setActiveMonthKey(visible[0].target.dataset.monthKey)
+    }, { root, threshold: [0, 0.1, 0.5, 1] })
+    for (const el of sectionRefs.current.values()) observer.observe(el)
+    return () => observer.disconnect()
+  }, [monthsWindow])
 
   // dateKey -> period (primeira localização que cobre o dia)
   const periodByDay = useMemo(() => {
     const map = {}
-    for (const cell of cells) {
-      for (const p of periods) {
-        if (p.start_date <= cell.key && cell.key <= p.end_date) { map[cell.key] = p; break }
+    for (const { cells } of monthsCells) {
+      for (const cell of cells) {
+        for (const p of periods) {
+          if (p.start_date <= cell.key && cell.key <= p.end_date) { map[cell.key] = p; break }
+        }
       }
     }
     return map
-  }, [cells, periods])
+  }, [monthsCells, periods])
 
   // dateKey -> eventos que ocorrem nesse dia (expande eventos multi-dia)
   const eventsByDay = useMemo(() => {
@@ -71,25 +153,27 @@ export default function CalendarPage() {
     for (const ev of events) {
       const s = ev.start_datetime.slice(0, 10)
       const e = ev.end_datetime.slice(0, 10)
-      for (const cell of cells) {
-        if (s <= cell.key && cell.key <= e) {
-          if (!map[cell.key]) map[cell.key] = []
-          map[cell.key].push(ev)
+      for (const { cells } of monthsCells) {
+        for (const cell of cells) {
+          if (s <= cell.key && cell.key <= e) {
+            if (!map[cell.key]) map[cell.key] = []
+            map[cell.key].push(ev)
+          }
         }
       }
     }
     return map
-  }, [cells, events])
+  }, [monthsCells, events])
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg)' }}>
+    <div className="h-screen flex flex-col" style={{ background: 'var(--bg)' }}>
       <header className="flex items-center justify-between px-5 py-3 flex-shrink-0"
         style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
         <div className="flex items-center gap-3">
           <span className="text-xl">🗓️</span>
           <h1 className="text-base font-semibold" style={{ color: 'var(--text)' }}>Agenda</h1>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 no-print">
           <button onClick={() => setShowLocations(true)}
             className="flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg hover:bg-[var(--surface-2)]"
             style={{ color: 'var(--text-2)' }}>
@@ -100,6 +184,9 @@ export default function CalendarPage() {
             style={{ background: 'var(--accent-solid)' }}>
             <Plus size={14} /> Evento
           </button>
+          <button onClick={() => window.print()} title="Imprimir" className="p-1.5 rounded-lg hover:bg-[var(--surface-2)]">
+            <Printer size={15} style={{ color: 'var(--text-3)' }} />
+          </button>
           {user && (
             <button onClick={logout} title="Sair" className="p-1.5 rounded-lg hover:bg-[var(--surface-2)]">
               <LogOut size={15} style={{ color: 'var(--text-3)' }} />
@@ -109,22 +196,10 @@ export default function CalendarPage() {
       </header>
 
       <div className="flex items-center justify-between px-5 py-3 flex-shrink-0">
-        <div className="flex items-center gap-2">
-          <button onClick={prevMonth} className="p-1.5 rounded-lg hover:bg-[var(--surface-2)]">
-            <ChevronLeft size={16} style={{ color: 'var(--text-2)' }} />
-          </button>
-          <span className="text-sm font-semibold w-36 text-center" style={{ color: 'var(--text)' }}>
-            {MONTH_NAMES[month]} {year}
-          </span>
-          <button onClick={nextMonth} className="p-1.5 rounded-lg hover:bg-[var(--surface-2)]">
-            <ChevronRight size={16} style={{ color: 'var(--text-2)' }} />
-          </button>
-          <button onClick={goToday}
-            className="text-xs font-medium px-2.5 py-1 rounded-lg ml-1 hover:bg-[var(--surface-2)]"
-            style={{ color: 'var(--accent)', border: '1px solid var(--border)' }}>
-            Hoje
-          </button>
-        </div>
+        <button onClick={goToday} className="no-print text-xs font-medium px-2.5 py-1 rounded-lg hover:bg-[var(--surface-2)]"
+          style={{ color: 'var(--accent)', border: '1px solid var(--border)' }}>
+          Hoje
+        </button>
 
         {locations.length > 0 && (
           <div className="hidden sm:flex items-center gap-3">
@@ -138,19 +213,41 @@ export default function CalendarPage() {
         )}
       </div>
 
-      <main className="flex-1 flex flex-col px-5 pb-5 min-h-0">
-        <div className="flex-1 flex flex-col rounded-xl overflow-hidden min-h-0"
-          style={{ border: '1px solid var(--border)', opacity: loading ? 0.6 : 1 }}>
-          <MonthGrid
-            cells={cells}
-            periodByDay={periodByDay}
-            eventsByDay={eventsByDay}
-            todayKey={tKey}
-            onDayClick={(dateKey) => setEventModal({ date: dateKey })}
-            onEventClick={(event) => setEventModal({ event })}
-            onPeriodClick={(period) => setPeriodModal({ period })}
-          />
-        </div>
+      <main ref={scrollRef} className="flex-1 overflow-y-auto px-5 pb-5 min-h-0" style={{ opacity: loading ? 0.6 : 1 }}>
+        <button onMouseDown={e => e.preventDefault()} onClick={loadEarlier} className="no-print w-full flex items-center justify-center gap-1.5 py-2 text-xs font-medium rounded-lg hover:bg-[var(--surface-2)] mb-2"
+          style={{ color: 'var(--text-3)' }}>
+          <ChevronUp size={14} /> Meses anteriores
+        </button>
+
+        {monthsCells.map(({ year, month, key, cells }) => (
+          <div key={key} data-month-key={key}
+            ref={el => { if (el) sectionRefs.current.set(key, el); else sectionRefs.current.delete(key) }}
+            className={key === activeMonthKey ? 'mb-6' : 'mb-6 no-print'}>
+            <h2 className="sticky top-0 z-10 text-sm font-semibold py-2" style={{ color: 'var(--text)', background: 'var(--bg)' }}>
+              {MONTH_NAMES[month]} {year}
+            </h2>
+            <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--border)' }}>
+              <MonthGrid
+                cells={cells}
+                periodByDay={periodByDay}
+                eventsByDay={eventsByDay}
+                todayKey={tKey}
+                onDayClick={(dateKey) => setEventModal({ date: dateKey })}
+                onEventClick={(event) => setEventModal({ event })}
+                onPeriodClick={(period) => setPeriodModal({ period })}
+                onRangeSelect={(start, end) => {
+                  if (locations.length === 0) { toast.error('Cria uma localização primeiro em "Localizações"'); return }
+                  setPeriodModal({ range: { start, end } })
+                }}
+              />
+            </div>
+          </div>
+        ))}
+
+        <button onMouseDown={e => e.preventDefault()} onClick={loadLater} className="no-print w-full flex items-center justify-center gap-1.5 py-2 text-xs font-medium rounded-lg hover:bg-[var(--surface-2)]"
+          style={{ color: 'var(--text-3)' }}>
+          Meses seguintes <ChevronDown size={14} />
+        </button>
       </main>
 
       {eventModal && (
@@ -178,6 +275,8 @@ export default function CalendarPage() {
           locations={locations}
           defaultLocationId={periodModal.location?.id}
           defaultDate={tKey}
+          defaultStartDate={periodModal.range?.start}
+          defaultEndDate={periodModal.range?.end}
           period={periodModal.period}
           onClose={() => setPeriodModal(null)}
           onSaved={loadData}
@@ -186,7 +285,7 @@ export default function CalendarPage() {
       )}
 
       {locations.length === 0 && !loading && (
-        <div className="fixed bottom-5 right-5 max-w-xs p-3 rounded-xl animate-fade-in flex items-start gap-2"
+        <div className="fixed bottom-5 right-5 max-w-xs p-3 rounded-xl animate-fade-in flex items-start gap-2 no-print"
           style={{ background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: '0 4px 14px var(--shadow)' }}>
           <CalendarPlus size={16} style={{ color: 'var(--accent)', marginTop: 2 }} />
           <p className="text-xs" style={{ color: 'var(--text-2)' }}>

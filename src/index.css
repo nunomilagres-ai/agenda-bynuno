@@ -42,8 +42,14 @@
   }
 }
 
+@page {
+  size: landscape;
+  margin: 12mm;
+}
+
 @media print {
   body { color-scheme: light; }
+  .no-print { display: none !important; }
 }
 
 /* ─── Base ─────────────────────────────────────────────────────────────────── */

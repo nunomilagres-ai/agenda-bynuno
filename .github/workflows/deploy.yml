@@ -61,6 +61,12 @@ jobs:
 
           npx wrangler d1 execute agenda-bynuno-db --remote --file=./schema.sql
 
+          for f in ./migrations/*.sql; do
+            [ -e "$f" ] || continue
+            echo "Migração: $f"
+            npx wrangler d1 execute agenda-bynuno-db --remote --file="$f" || echo "(já aplicada ou sem alterações — ignorado)"
+          done
+
       - name: Guardar o database_id no repositório (só na primeira vez)
         run: |
           if ! git diff --quiet wrangler.toml; then
