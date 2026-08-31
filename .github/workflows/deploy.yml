@@ -6,9 +6,31 @@ on:
   workflow_dispatch: {}
 
 jobs:
-  deploy:
+  check:
     runs-on: ubuntu-latest
-    if: "!contains(github.event.head_commit.message, '[skip-deploy]')"
+    outputs:
+      skip: ${{ steps.check.outputs.skip }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      # Só a 1ª linha (assunto) do commit conta para saltar o deploy — um
+      # squash-merge junta as mensagens de todos os commits da branch no
+      # corpo, e um commit intermédio marcado [skip-deploy] (ou até só uma
+      # frase a explicar essa marca) não deve saltar o deploy do resultado.
+      - name: Verificar marca [skip-deploy] (só no assunto do commit)
+        id: check
+        run: |
+          SUBJECT=$(git log -1 --pretty=%s)
+          if [[ "$SUBJECT" == *"[skip-deploy]"* ]]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  deploy:
+    needs: check
+    if: needs.check.outputs.skip != 'true'
+    runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
