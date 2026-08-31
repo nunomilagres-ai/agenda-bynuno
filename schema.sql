@@ -48,6 +48,9 @@ CREATE INDEX IF NOT EXISTS idx_location_periods_range ON location_periods(start_
 -- event_type = 'birthday': a série não suporta edição/eliminação por ocorrência
 -- isolada — editar ou apagar afeta sempre a série inteira (não faz sentido um
 -- aniversário ter uma exceção só num ano).
+-- event_type = 'vacation' (férias): evento normal em todos os outros aspetos
+-- (recorrência opcional, edição por ocorrência) — a única diferença é visual:
+-- os dias que cobre ficam com o mesmo fundo usado nos feriados na grelha.
 -- event_type = NULL (evento normal, recorrente ou não): cada ocorrência,
 -- incluindo a primeira, é editável e apagável isoladamente — a alteração fica
 -- registada em event_exceptions e não afeta as restantes ocorrências.

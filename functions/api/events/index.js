@@ -82,7 +82,7 @@ export async function onRequestPost({ request, env }) {
     if (!loc) locationId = null;
   }
 
-  const eventType = body.event_type === 'birthday' ? 'birthday' : null;
+  const eventType = ['birthday', 'vacation'].includes(body.event_type) ? body.event_type : null;
 
   let recurrenceFreq = eventType === 'birthday' ? 'yearly' : (body.recurrence_freq || null);
   if (recurrenceFreq && !RECURRENCE_FREQS.includes(recurrenceFreq)) {

@@ -51,7 +51,7 @@ export async function onRequestPut({ request, env, params }) {
   }
 
   const eventType = body.event_type !== undefined
-    ? (body.event_type === 'birthday' ? 'birthday' : null)
+    ? (['birthday', 'vacation'].includes(body.event_type) ? body.event_type : null)
     : event.event_type;
 
   let recurrenceFreq = eventType === 'birthday'

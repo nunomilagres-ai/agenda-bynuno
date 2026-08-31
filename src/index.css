@@ -17,6 +17,7 @@
   --accent-ink: #C6D6FA;
   --danger: #F87171;
   --danger-soft: rgba(248, 113, 113, 0.14);
+  --weekend-bg: #24262D;
   --overlay: rgba(0, 0, 0, 0.5);
   --shadow: rgba(0, 0, 0, 0.3);
 }
@@ -37,6 +38,7 @@
     --accent-ink: #1D3D87;
     --danger: #DC2626;
     --danger-soft: rgba(220, 38, 38, 0.08);
+    --weekend-bg: #E7EAF3;
     --overlay: rgba(19, 26, 42, 0.35);
     --shadow: rgba(19, 26, 42, 0.08);
   }
