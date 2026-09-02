@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { Toaster } from 'sonner'
 import { AuthProvider, useAuth } from '@/lib/AuthContext'
 import CalendarPage from '@/pages/CalendarPage'
+import NotesPage from '@/pages/NotesPage'
 
 // ─── Spinner de loading ───────────────────────────────────────────────────────
 function Spinner() {
@@ -61,6 +62,12 @@ function AppInner() {
     <Router>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        {/* /notas antes do catch-all — o notes.bynuno.com redireciona para cá. */}
+        <Route path="/notas" element={
+          <ProtectedRoute>
+            <NotesPage />
+          </ProtectedRoute>
+        } />
         <Route path="/*" element={
           <ProtectedRoute>
             <CalendarPage />
