@@ -94,3 +94,70 @@ CREATE TABLE IF NOT EXISTS event_exceptions (
 );
 
 CREATE INDEX IF NOT EXISTS idx_event_exceptions_event ON event_exceptions(event_id);
+
+-- ═════════════════════════════════════════════════════════════════════════════
+-- NOTAS — vindas do notes.bynuno.com, que foi fundido nesta app.
+-- As três tabelas abaixo mantêm os nomes originais (note_topics, notes,
+-- note_reminders) para os dados poderem ser importados da BD do Notes tal como
+-- estão: o user_id é, nas duas apps, o id do utilizador no byNuno Hub, por isso
+-- não há ids a remapear. Ver MIGRACAO-NOTES.md.
+-- ═════════════════════════════════════════════════════════════════════════════
+
+-- ─── Temas / Agregadores de notas ────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS note_topics (
+  id           TEXT PRIMARY KEY,
+  user_id      TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  name         TEXT NOT NULL,
+  emoji        TEXT NOT NULL DEFAULT '📋',
+  color        TEXT NOT NULL DEFAULT '#2E5FCB',
+  sort_order   INTEGER NOT NULL DEFAULT 0,
+  created_date TEXT NOT NULL,
+  updated_date TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_note_topics_user ON note_topics(user_id);
+
+-- ─── Notas ────────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS notes (
+  id           TEXT PRIMARY KEY,
+  user_id      TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  topic_id     TEXT REFERENCES note_topics(id) ON DELETE SET NULL,
+  title        TEXT NOT NULL DEFAULT 'Nova nota',
+  content      TEXT NOT NULL DEFAULT '',
+  pinned       INTEGER NOT NULL DEFAULT 0,
+  created_date TEXT NOT NULL,
+  updated_date TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_notes_user    ON notes(user_id);
+CREATE INDEX IF NOT EXISTS idx_notes_topic   ON notes(topic_id);
+CREATE INDEX IF NOT EXISTS idx_notes_updated ON notes(updated_date DESC);
+
+-- ─── Lembretes ────────────────────────────────────────────────────────────────
+-- Ao contrário dos eventos (cujas ocorrências são calculadas em runtime), um
+-- lembrete recorrente é gravado como uma linha por ocorrência, geradas na
+-- criação até ao fim indicado ou a um limite de 2 anos. Fica assim por agora
+-- para os dados do Notes entrarem sem transformação; unificar os dois motores
+-- de recorrência é um passo posterior.
+CREATE TABLE IF NOT EXISTS note_reminders (
+  id                   TEXT PRIMARY KEY,
+  user_id              TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  note_id              TEXT REFERENCES notes(id) ON DELETE SET NULL,
+  title                TEXT NOT NULL,
+  body                 TEXT,
+  due_date             TEXT NOT NULL,
+  completed            INTEGER NOT NULL DEFAULT 0,
+  notified             INTEGER NOT NULL DEFAULT 0,
+  recurrence           TEXT,     -- NULL | daily | weekly | monthly | yearly
+  recurrence_end_date  TEXT,     -- YYYY-MM-DD ou NULL = sem fim
+  recurrence_count     INTEGER,  -- nº máximo de ocorrências ou NULL
+  recurrence_parent_id TEXT,     -- id da 1ª ocorrência da série (NULL na própria)
+  recurrence_index     INTEGER NOT NULL DEFAULT 0,
+  created_date         TEXT NOT NULL,
+  updated_date         TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_note_reminders_user   ON note_reminders(user_id);
+CREATE INDEX IF NOT EXISTS idx_note_reminders_due    ON note_reminders(due_date);
+CREATE INDEX IF NOT EXISTS idx_note_reminders_note   ON note_reminders(note_id);
+CREATE INDEX IF NOT EXISTS idx_note_reminders_parent ON note_reminders(recurrence_parent_id);
