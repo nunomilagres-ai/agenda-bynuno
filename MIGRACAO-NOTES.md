@@ -2,65 +2,67 @@
 
 O Notes foi fundido nesta app. As tabelas (`note_topics`, `notes`,
 `note_reminders`) e os endpoints (`/api/notes`, `/api/note-topics`,
-`/api/note-reminders`, `/api/ai`) já cá estão — o deploy cria as tabelas
-sozinho ao correr o `schema.sql`.
+`/api/note-reminders`, `/api/ai`) já cá estão.
 
-Falta **copiar os dados** da base de dados do Notes para a da Agenda. Isto é um
-passo manual e único, porque são duas bases de dados D1 distintas e nenhuma
-consegue ler a outra por SQL.
+## Estado
 
-## Porque é que isto é simples
+- [x] Esquema e API portados (PR #8).
+- [x] Dados copiados da `notes-bynuno-db` para a `agenda-bynuno-db` — feito e
+      confirmado em 2026-09-02 (8 temas, 41 notas, 18 lembretes).
+- [x] Análise de foto de nota a correr em Cloudflare Workers AI, grátis, sem
+      chave a configurar (ver abaixo) — já não usa a Anthropic.
+- [ ] Redirecionar `notes.bynuno.com` para cá e arquivar o repositório antigo.
+
+## Porque é que a cópia de dados foi simples
 
 Nas duas apps o `user_id` gravado é o **id do utilizador no byNuno Hub** (ver
-`functions/_auth.js`, que era ficheiro igual nos dois repositórios). As linhas do
-Notes entram por isso tal como estão — não há ids a remapear nem a reconciliar.
+`functions/_auth.js`, que era ficheiro igual nos dois repositórios). As linhas
+do Notes entraram tal como estavam — sem ids a remapear nem a reconciliar.
 
-Não há choque de nomes de tabelas: a Agenda tem `users`, `locations`,
-`location_periods`, `events`, `event_exceptions`; o Notes traz `note_topics`,
-`notes`, `note_reminders`.
-
-## Passos
-
-Correr localmente, com o `wrangler` autenticado na conta Cloudflare (`npx
-wrangler login`):
+Os passos usados (para referência, caso seja preciso repetir nalgum outro
+ambiente):
 
 ```bash
-# 1. Salvaguarda das duas bases de dados, antes de tocar em nada
+# Salvaguarda das duas bases de dados, antes de tocar em nada
 npx wrangler d1 export agenda-bynuno-db --remote --output backup-agenda-$(date +%F).sql
 npx wrangler d1 export notes-bynuno-db  --remote --output backup-notes-$(date +%F).sql
 
-# 2. Exportar só os dados das três tabelas do Notes (sem o esquema:
-#    as tabelas já foram criadas do lado da Agenda pelo deploy)
+# Exportar só os dados das três tabelas do Notes (sem o esquema: as tabelas já
+# existem do lado da Agenda, criadas pelo deploy do schema.sql)
 npx wrangler d1 export notes-bynuno-db --remote --no-schema \
   --table note_topics --table notes --table note_reminders \
   --output notes-dados.sql
 
-# 3. Importar na base de dados da Agenda
+# Importar na base de dados da Agenda
 npx wrangler d1 execute agenda-bynuno-db --remote --file=./notes-dados.sql
 
-# 4. Conferir as contagens (devem bater certo com as do Notes)
+# Conferir as contagens (devem bater certo com as do Notes)
 npx wrangler d1 execute agenda-bynuno-db --remote --command \
   "SELECT (SELECT COUNT(*) FROM note_topics) AS temas, (SELECT COUNT(*) FROM notes) AS notas, (SELECT COUNT(*) FROM note_reminders) AS lembretes"
 ```
 
-Se o passo 3 falhar a meio, a base de dados fica num estado parcial: apagar as
-três tabelas (`DELETE FROM note_reminders; DELETE FROM notes; DELETE FROM
-note_topics;`) e repetir — o export é sempre um ficheiro de `INSERT`s completo,
-por isso pode ser reaplicado do zero.
+Se o import falhar a meio, a base de dados fica no estado anterior — o próprio
+`wrangler` avisa disso e o export pode ser reaplicado do zero sem risco.
 
-## Segredo a configurar
+## Análise de foto de nota — Cloudflare Workers AI
 
-O `/api/ai` (sugestão de conteúdo a partir de foto de nota manuscrita) precisa
-da chave que estava no projeto do Notes:
+`/api/ai` (sugestão de título/conteúdo/tema a partir de uma foto de nota
+manuscrita) passou a correr no binding `AI` da própria conta Cloudflare
+(`@cf/meta/llama-3.2-11b-vision-instruct`), declarado no `wrangler.toml`. Não
+precisa de conta nem chave nova — está incluído em qualquer conta Cloudflare,
+com 10.000 Neurons/dia grátis, muito acima do que esta funcionalidade gasta a
+uso pessoal.
 
-```bash
-npx wrangler pages secret put ANTHROPIC_API_KEY --project-name agenda-bynuno
-```
+Isto substitui a versão anterior, que dependia da API paga da Anthropic
+(`ANTHROPIC_API_KEY`) — já não é preciso configurar esse segredo.
 
-Sem ela, tudo o resto funciona — só essa funcionalidade devolve erro 500 a
-dizer que a chave não está configurada.
+A qualidade da leitura de letra manuscrita é razoável mas inferior à da
+Claude; se um dia isso for um problema real, as alternativas ficam registadas
+na conversa que levou a esta escolha (Google Gemini tem tier gratuito com
+melhor qualidade, mas exige conta e chave à parte; a Claude é paga mas muito
+barata a este ritmo de uso).
 
-## Depois de confirmado
+## Por fazer
 
 1. Apontar `notes.bynuno.com` para `agenda.bynuno.com` (redirect no painel da
    Cloudflare, no projeto Pages do Notes: *Redirect Rules* → 301 para
