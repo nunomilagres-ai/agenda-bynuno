@@ -1,32 +1,26 @@
-// aiPhoto.js — analyse a photo with Claude Vision and return note proposal
+// aiPhoto.js — analisa uma foto de nota via Cloudflare Workers AI (grátis,
+// sem chave a configurar) e devolve uma proposta de {title, content, topic_name}.
 export async function analyzeNotePhoto(base64, mediaType, topics) {
   const topicList = topics.length
     ? 'Temas disponíveis: ' + topics.map(t => t.emoji + ' ' + t.name).join(', ')
     : 'Ainda sem temas definidos.'
 
-  const payload = {
-    model: 'claude-opus-4-5',
-    max_tokens: 1024,
-    messages: [{
-      role: 'user',
-      content: [
-        { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
-        { type: 'text', text: 'Analisa esta imagem de uma nota (manuscrita, impressa ou fotografada).\n\n' + topicList + '\n\nResponde APENAS com JSON:\n{"title":"...","content":"... Markdown ...","topic_name":"... ou null","confidence":0.9}\n\nNada fora do JSON.' },
-      ],
-    }],
-  }
+  const prompt =
+    'Analisa esta imagem de uma nota (manuscrita, impressa ou fotografada).\n\n' +
+    topicList +
+    '\n\nResponde APENAS com JSON, nada fora dele:\n' +
+    '{"title":"...","content":"... Markdown ...","topic_name":"... ou null","confidence":0.9}'
 
   const res = await fetch('/api/ai', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
+    body: JSON.stringify({ base64, mediaType, prompt }),
   })
-  if (!res.ok) throw new Error('Erro na API de IA (' + res.status + ')')
+  if (!res.ok) throw new Error('Erro na análise da foto (' + res.status + ')')
   const data = await res.json()
   if (data.error) throw new Error(data.error)
-  const text = data.content?.[0]?.text || ''
-  const match = text.match(/\{[\s\S]*\}/)
-  if (!match) throw new Error('Resposta IA inválida')
+  const match = (data.text || '').match(/\{[\s\S]*\}/)
+  if (!match) throw new Error('Resposta da IA inválida')
   return JSON.parse(match[0])
 }
 

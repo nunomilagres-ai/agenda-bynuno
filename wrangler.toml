@@ -7,5 +7,11 @@ binding = "DB"
 database_name = "agenda-bynuno-db"
 database_id = "c04352ba-bfa7-4926-ac2c-2f99927c8b52"
 
+# Análise de fotos de notas (/api/ai) — Cloudflare Workers AI, incluído em
+# qualquer conta Cloudflare sem custo nem chave a configurar (10.000
+# Neurons/dia grátis). Nenhum ANTHROPIC_API_KEY é usado por esta app.
+[ai]
+binding = "AI"
+
 [vars]
 APP_URL = "https://agenda.bynuno.com"
