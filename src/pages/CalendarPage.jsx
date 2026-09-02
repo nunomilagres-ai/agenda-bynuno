@@ -1,10 +1,10 @@
 // CalendarPage.jsx — vista mensal, em scroll vertical contínuo (não paginado por mês)
 import { useState, useEffect, useLayoutEffect, useCallback, useMemo, useRef } from 'react'
-import { Plus, MapPin, LogOut, CalendarPlus, Printer, ChevronUp, ChevronDown } from 'lucide-react'
+import { Plus, MapPin, CalendarPlus, Printer, ChevronUp, ChevronDown } from 'lucide-react'
 import { toast } from 'sonner'
-import { useAuth } from '@/lib/AuthContext'
 import { api } from '@/lib/api'
 import { MONTH_NAMES, buildMonthGrid, todayKey, dateKey, daysInMonth } from '@/lib/dateUtils'
+import AppHeader from '@/components/AppHeader'
 import MonthGrid from '@/components/MonthGrid'
 import EventModal from '@/components/EventModal'
 import LocationSidebar from '@/components/LocationSidebar'
@@ -28,7 +28,6 @@ function defaultWindow(today) {
 }
 
 export default function CalendarPage() {
-  const { user, logout } = useAuth()
   const today = useMemo(() => new Date(), [])
   const tKey = todayKey()
   const todayMKey = monthKey(today.getFullYear(), today.getMonth())
@@ -173,33 +172,21 @@ export default function CalendarPage() {
 
   return (
     <div className="h-screen flex flex-col" style={{ background: 'var(--bg)' }}>
-      <header className="flex items-center justify-between px-5 py-3 flex-shrink-0"
-        style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
-        <div className="flex items-center gap-3">
-          <span className="text-xl">🗓️</span>
-          <h1 className="text-base font-semibold" style={{ color: 'var(--text)' }}>Agenda</h1>
-        </div>
-        <div className="flex items-center gap-2 no-print">
-          <button onClick={() => setShowLocations(true)}
-            className="flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg hover:bg-[var(--surface-2)]"
-            style={{ color: 'var(--text-2)' }}>
-            <MapPin size={14} /> Localizações
-          </button>
-          <button onClick={() => setEventModal({ date: tKey })}
-            className="flex items-center gap-1.5 text-sm font-semibold px-3 py-1.5 rounded-lg text-white"
-            style={{ background: 'var(--accent-solid)' }}>
-            <Plus size={14} /> Evento
-          </button>
-          <button onClick={() => window.print()} title="Imprimir" className="p-1.5 rounded-lg hover:bg-[var(--surface-2)]">
-            <Printer size={15} style={{ color: 'var(--text-3)' }} />
-          </button>
-          {user && (
-            <button onClick={logout} title="Sair" className="p-1.5 rounded-lg hover:bg-[var(--surface-2)]">
-              <LogOut size={15} style={{ color: 'var(--text-3)' }} />
-            </button>
-          )}
-        </div>
-      </header>
+      <AppHeader actions={<>
+        <button onClick={() => setShowLocations(true)}
+          className="flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg hover:bg-[var(--surface-2)]"
+          style={{ color: 'var(--text-2)' }}>
+          <MapPin size={14} /> <span className="hidden sm:inline">Localizações</span>
+        </button>
+        <button onClick={() => setEventModal({ date: tKey })}
+          className="flex items-center gap-1.5 text-sm font-semibold px-3 py-1.5 rounded-lg text-white"
+          style={{ background: 'var(--accent-solid)' }}>
+          <Plus size={14} /> Evento
+        </button>
+        <button onClick={() => window.print()} title="Imprimir" className="p-1.5 rounded-lg hover:bg-[var(--surface-2)]">
+          <Printer size={15} style={{ color: 'var(--text-3)' }} />
+        </button>
+      </>} />
 
       <div className="flex items-center justify-between px-5 py-3 flex-shrink-0">
         <button onClick={goToday} className="no-print text-xs font-medium px-2.5 py-1 rounded-lg hover:bg-[var(--surface-2)]"

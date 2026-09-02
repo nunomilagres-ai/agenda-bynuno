@@ -17,6 +17,10 @@
   --accent-ink: #C6D6FA;
   --danger: #F87171;
   --danger-soft: rgba(248, 113, 113, 0.14);
+  /* Concluído/sucesso — usado pelos lembretes já feitos. Não existia enquanto a
+     app era só calendário; entrou com as notas vindas do notes.bynuno.com. */
+  --ok: #4ADE80;
+  --ok-soft: rgba(74, 222, 128, 0.14);
   --weekend-bg: #24262D;
   --overlay: rgba(0, 0, 0, 0.5);
   --shadow: rgba(0, 0, 0, 0.3);
@@ -38,6 +42,8 @@
     --accent-ink: #1D3D87;
     --danger: #DC2626;
     --danger-soft: rgba(220, 38, 38, 0.08);
+    --ok: #15803D;
+    --ok-soft: rgba(21, 128, 61, 0.08);
     --weekend-bg: #E7EAF3;
     --overlay: rgba(19, 26, 42, 0.35);
     --shadow: rgba(19, 26, 42, 0.08);
@@ -99,3 +105,31 @@ body {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+/* ─── Pré-visualização de markdown das notas ─────────────────────────────────
+   Vindo do notes.bynuno.com, com as cores fixas trocadas pelos tokens: assim a
+   pré-visualização acompanha o tema do sistema como o resto da app. */
+.md-h1 { font-size: 1.6em; font-weight: 700; margin: .6em 0 .3em; color: var(--text); }
+.md-h2 { font-size: 1.3em; font-weight: 700; margin: .5em 0 .3em; color: var(--text); }
+.md-h3 { font-size: 1.1em; font-weight: 600; margin: .5em 0 .3em; color: var(--text); }
+.md-h4, .md-h5, .md-h6 { font-weight: 600; margin: .4em 0 .2em; color: var(--text); }
+.md-p  { margin: .35em 0; color: var(--text-2); line-height: 1.75; }
+.md-pre {
+  background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px;
+  padding: 10px 14px; margin: .6em 0; overflow-x: auto;
+}
+.md-pre code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .82em; color: var(--accent-ink); }
+.md-code {
+  background: var(--surface-2); border-radius: 4px;
+  padding: 1px 5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .84em; color: var(--accent-ink);
+}
+.md-ul { list-style: disc; padding-left: 1.4em; margin: .3em 0; }
+.md-ol { list-style: decimal; padding-left: 1.4em; margin: .3em 0; }
+.md-li { margin: .2em 0; color: var(--text-2); }
+.md-blockquote {
+  border-left: 3px solid var(--accent); padding-left: 14px;
+  color: var(--text-2); font-style: italic; margin: .5em 0;
+}
+.md-hr { border: none; border-top: 1px solid var(--border); margin: 1em 0; }
+.md-a  { color: var(--accent); text-decoration: underline; }
+.md-a:hover { opacity: .75; }
