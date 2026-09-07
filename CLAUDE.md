@@ -79,6 +79,30 @@ sobre fundo escuro) e não garante contraste suficiente com texto branco por cim
 body { font-family: 'Inter', system-ui, sans-serif; }
 ```
 
+## Datas: sempre dd/mm/aaaa
+
+Todas as datas mostradas ao utilizador (campos de formulário, calendários, listas,
+relatórios) usam sempre o formato **dd/mm/aaaa**, independentemente da localização do
+sistema operativo/browser do utilizador. Nunca depender do formato nativo do browser.
+
+**Porquê não basta usar `<input type="date">` nativo**: o `value` devolvido é sempre
+ISO (`yyyy-mm-dd`), mas o *texto* mostrado ao utilizador segue a localização da
+máquina — no Chrome/Firefox isso não é controlável pelo atributo `lang` da página, só
+pela configuração do sistema operativo. Um utilizador com o sistema em inglês vê
+`mm/dd/yyyy` mesmo numa app em português.
+
+**Solução**: um componente de data próprio (ex.: `DateInput.jsx` na Agenda) que:
+- escreve o texto sozinho, sempre `dd/mm/aaaa`, inserindo as barras `/` automaticamente
+  à medida que o utilizador digita os algarismos;
+- guarda/expõe o valor por fora sempre em ISO (`yyyy-mm-dd`), para compatibilidade com
+  a base de dados e a API;
+- mantém um `<input type="date">` nativo escondido, acionado via `.showPicker()`, para
+  quem preferir escolher a data num calendário em vez de a escrever.
+
+Datas só de leitura (relatórios, listas, cabeçalhos) formatam-se com uma função
+utilitária local (`dd/mm/aaaa`), nunca com `toLocaleDateString()` sem locale fixo
+(esse também segue a máquina do utilizador).
+
 ## Paleta
 
 Minimal, estilo Apple: poucos tons, contraste subtil para indicar estado/ação. Sem

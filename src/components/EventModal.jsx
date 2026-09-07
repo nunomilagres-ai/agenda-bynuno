@@ -4,6 +4,7 @@ import { X, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { api } from '@/lib/api'
 import { isoToDate, isoToTime, combineDatetime } from '@/lib/dateUtils'
+import DateInput from '@/components/DateInput'
 
 const RECURRENCE_OPTIONS = [
   { value: '',              label: 'Não se repete' },
@@ -136,7 +137,7 @@ export default function EventModal({ date, event, locations, onClose, onSaved, o
             <div className="flex flex-col gap-1">
               <span className="text-[11px] font-medium" style={{ color: 'var(--text-3)' }}>Início</span>
               <div className="flex gap-1">
-                <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
+                <DateInput value={startDate} onChange={setStartDate}
                   className="flex-1 px-2 py-1.5 rounded-lg text-sm" style={{ border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)' }} />
                 {!allDay && (
                   <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)}
@@ -147,7 +148,7 @@ export default function EventModal({ date, event, locations, onClose, onSaved, o
             <div className="flex flex-col gap-1">
               <span className="text-[11px] font-medium" style={{ color: 'var(--text-3)' }}>Fim</span>
               <div className="flex gap-1">
-                <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
+                <DateInput value={endDate} onChange={setEndDate}
                   className="flex-1 px-2 py-1.5 rounded-lg text-sm" style={{ border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)' }} />
                 {!allDay && (
                   <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)}
@@ -185,7 +186,7 @@ export default function EventModal({ date, event, locations, onClose, onSaved, o
                     {RECURRENCE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                   </select>
                   {recurrenceFreq && (
-                    <input type="date" value={recurrenceUntil} onChange={e => setRecurrenceUntil(e.target.value)}
+                    <DateInput value={recurrenceUntil} onChange={setRecurrenceUntil}
                       title="Repetir até (opcional)"
                       className="px-2 py-1.5 rounded-lg text-sm w-36" style={{ border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)' }} />
                   )}
