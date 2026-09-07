@@ -53,6 +53,13 @@ export async function onRequestDelete({ request, env, params }) {
   ).bind(params.id, user.id).first();
   if (!note) return notFound();
 
+  // A linha em note_attachments cai sozinha com o ON DELETE CASCADE, mas o
+  // objeto no R2 não — sem isto, apagar a nota deixava ficheiros órfãos.
+  const { results: attachments } = await env.DB.prepare(
+    'SELECT r2_key FROM note_attachments WHERE note_id = ? AND user_id = ?'
+  ).bind(params.id, user.id).all();
+  await Promise.all(attachments.map(a => env.ATTACHMENTS.delete(a.r2_key)));
+
   await env.DB.prepare('DELETE FROM notes WHERE id = ? AND user_id = ?')
     .bind(params.id, user.id).run();
 

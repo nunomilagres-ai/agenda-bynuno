@@ -7,5 +7,11 @@ binding = "DB"
 database_name = "agenda-bynuno-db"
 database_id = "c04352ba-bfa7-4926-ac2c-2f99927c8b52"
 
+# Anexos de notas (PDF, fotos, etc.) — bucket criado automaticamente pelo
+# workflow de deploy (ver .github/workflows/deploy.yml), tal como a D1 acima.
+[[r2_buckets]]
+binding = "ATTACHMENTS"
+bucket_name = "agenda-bynuno-attachments"
+
 [vars]
 APP_URL = "https://agenda.bynuno.com"

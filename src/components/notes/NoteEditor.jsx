@@ -4,6 +4,7 @@ import { api, renderMarkdown } from '@/lib/api'
 import { toast } from 'sonner'
 import PhotoCapture from './PhotoCapture'
 import NoteReminders from './NoteReminders'
+import NoteAttachments from './NoteAttachments'
 
 export default function NoteEditor({ note, topics, onUpdate, onDelete, onBack, reminders, setReminders }) {
   const [title, setTitle] = useState(note.title||'')
@@ -88,6 +89,7 @@ export default function NoteEditor({ note, topics, onUpdate, onDelete, onBack, r
               className="w-full h-full resize-none px-5 py-4 text-sm focus:outline-none font-mono leading-relaxed"
               style={{color:'var(--text-2)',background:'transparent'}}/>}
       </div>
+      <NoteAttachments noteId={note.id}/>
       {reminders !== undefined && <NoteReminders noteId={note.id} reminders={reminders} setReminders={setReminders}/>}
     </div>
   )
