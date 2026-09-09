@@ -59,6 +59,17 @@ export const api = {
     update: (id, d) => fetch(`/api/note-reminders/${id}`, { method: 'PUT', headers: J, body: JSON.stringify(d) }).then(handle),
     delete: (id)    => fetch(`/api/note-reminders/${id}`, { method: 'DELETE' }).then(handle),
   },
+  attachments: {
+    list:   (noteId)       => fetch(`/api/notes/${noteId}/attachments`).then(handle),
+    // Sem header Content-Type manual — o browser define-o sozinho (com o boundary certo) para FormData.
+    upload: (noteId, file) => {
+      const fd = new FormData()
+      fd.append('file', file)
+      return fetch(`/api/notes/${noteId}/attachments`, { method: 'POST', body: fd }).then(handle)
+    },
+    delete: (id)            => fetch(`/api/attachments/${id}`, { method: 'DELETE' }).then(handle),
+    fileUrl: (id)           => `/api/attachments/${id}/file`,
+  },
 }
 
 export function gid() {

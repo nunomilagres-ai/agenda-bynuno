@@ -161,3 +161,22 @@ CREATE INDEX IF NOT EXISTS idx_note_reminders_user   ON note_reminders(user_id);
 CREATE INDEX IF NOT EXISTS idx_note_reminders_due    ON note_reminders(due_date);
 CREATE INDEX IF NOT EXISTS idx_note_reminders_note   ON note_reminders(note_id);
 CREATE INDEX IF NOT EXISTS idx_note_reminders_parent ON note_reminders(recurrence_parent_id);
+
+-- ─── Anexos ───────────────────────────────────────────────────────────────────
+-- Ficheiros (PDF, fotos, etc.) associados a uma nota. Os bytes ficam no bucket
+-- R2 "ATTACHMENTS" sob r2_key; esta tabela só guarda os metadados. Apagar a
+-- nota apaga em cascata as linhas aqui, mas não os objetos R2 — a rota de
+-- eliminação da nota trata disso explicitamente (ver functions/api/notes/[id].js).
+CREATE TABLE IF NOT EXISTS note_attachments (
+  id           TEXT PRIMARY KEY,
+  user_id      TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  note_id      TEXT NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
+  filename     TEXT NOT NULL,
+  content_type TEXT,
+  size_bytes   INTEGER NOT NULL DEFAULT 0,
+  r2_key       TEXT NOT NULL,
+  created_date TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_note_attachments_note ON note_attachments(note_id);
+CREATE INDEX IF NOT EXISTS idx_note_attachments_user ON note_attachments(user_id);
