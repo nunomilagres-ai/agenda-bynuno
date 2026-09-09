@@ -22,11 +22,14 @@ export async function onRequestGet({ request, env }) {
              ORDER BY pinned DESC, updated_date DESC`;
     bindings = [user.id];
   } else if (topicId) {
+    // Um tema "chapéu" traz também as notas dos temas que agrupa — o cliente
+    // manda o próprio id mais os dos filhos, separados por vírgula.
+    const ids = topicId.split(',').filter(Boolean);
     query = `SELECT id, topic_id, title, content, pinned, created_date, updated_date
              FROM notes
-             WHERE user_id = ? AND topic_id = ?
+             WHERE user_id = ? AND topic_id IN (${ids.map(() => '?').join(',')})
              ORDER BY pinned DESC, updated_date DESC`;
-    bindings = [user.id, topicId];
+    bindings = [user.id, ...ids];
   } else {
     query = `SELECT id, topic_id, title, content, pinned, created_date, updated_date
              FROM notes

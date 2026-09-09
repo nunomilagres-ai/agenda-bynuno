@@ -104,9 +104,12 @@ CREATE INDEX IF NOT EXISTS idx_event_exceptions_event ON event_exceptions(event_
 -- ═════════════════════════════════════════════════════════════════════════════
 
 -- ─── Temas / Agregadores de notas ────────────────────────────────────────────
+-- parent_id: um tema pode estar agrupado sob um tema "chapéu" — só um nível
+-- (um tema com parent_id não pode ele próprio ser pai de outro).
 CREATE TABLE IF NOT EXISTS note_topics (
   id           TEXT PRIMARY KEY,
   user_id      TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  parent_id    TEXT REFERENCES note_topics(id) ON DELETE SET NULL,
   name         TEXT NOT NULL,
   emoji        TEXT NOT NULL DEFAULT '📋',
   color        TEXT NOT NULL DEFAULT '#2E5FCB',
@@ -115,7 +118,8 @@ CREATE TABLE IF NOT EXISTS note_topics (
   updated_date TEXT NOT NULL
 );
 
-CREATE INDEX IF NOT EXISTS idx_note_topics_user ON note_topics(user_id);
+CREATE INDEX IF NOT EXISTS idx_note_topics_user   ON note_topics(user_id);
+CREATE INDEX IF NOT EXISTS idx_note_topics_parent ON note_topics(parent_id);
 
 -- ─── Notas ────────────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS notes (

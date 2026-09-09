@@ -42,15 +42,22 @@ export default function NotesPage() {
     startNotificationService()
   }, [])
 
-  // Notas do tema selecionado
+  // Notas do tema selecionado — um tema "chapéu" traz também as notas dos
+  // temas que agrupa.
   useEffect(() => {
     setSelectedNote(null)
     setSearch('')
-    const tid = selectedTopic === null ? undefined : selectedTopic === 'none' ? 'none' : selectedTopic
+    let tid
+    if (selectedTopic === null) tid = undefined
+    else if (selectedTopic === 'none') tid = 'none'
+    else {
+      const childIds = topics.filter(t => t.parent_id === selectedTopic).map(t => t.id)
+      tid = [selectedTopic, ...childIds].join(',')
+    }
     api.notes.list(tid)
       .then(d => Array.isArray(d) && setNotes(d))
       .catch(() => toast.error('Erro ao carregar notas'))
-  }, [selectedTopic])
+  }, [selectedTopic, topics])
 
   async function openNote(n) {
     try {

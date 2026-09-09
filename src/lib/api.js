@@ -47,7 +47,7 @@ export const api = {
     delete: (id)    => fetch(`/api/note-topics/${id}`, { method: 'DELETE' }).then(handle),
   },
   notes: {
-    list:   (tid)   => fetch(`/api/notes${tid !== undefined ? `?topic_id=${tid}` : ''}`).then(handle),
+    list:   (tid)   => fetch(`/api/notes${tid !== undefined ? `?topic_id=${encodeURIComponent(tid)}` : ''}`).then(handle),
     get:    (id)    => fetch(`/api/notes/${id}`).then(handle),
     create: (d)     => fetch('/api/notes', { method: 'POST', headers: J, body: JSON.stringify(d) }).then(handle),
     update: (id, d) => fetch(`/api/notes/${id}`, { method: 'PUT', headers: J, body: JSON.stringify(d) }).then(handle),

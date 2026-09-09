@@ -28,9 +28,12 @@ export default function NotesList({ notes, selectedId, search, setSearch, onSele
               <option value="__all__">📋 Todas as notas</option>
               <option value="__reminders__">🔔 Lembretes</option>
               <option value="__none__">📋 Geral</option>
-              {(topics||[]).map(t=>(
-                <option key={t.id} value={t.id}>{t.emoji} {t.name}</option>
-              ))}
+              {(topics||[]).filter(t=>!t.parent_id).map(t=>[
+                <option key={t.id} value={t.id}>{t.emoji} {t.name}</option>,
+                ...(topics||[]).filter(c=>c.parent_id===t.id).map(c=>(
+                  <option key={c.id} value={c.id}>{'  ↳ '}{c.emoji} {c.name}</option>
+                ))
+              ])}
             </select>
             <ChevronDown size={11} className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" style={{color:'var(--accent-ink)'}}/>
           </div>
