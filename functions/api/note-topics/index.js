@@ -30,12 +30,18 @@ export async function onRequestPost({ request, env }) {
 
   // Só um nível de hierarquia: o pai indicado tem de existir, ser do
   // utilizador, e não ter ele próprio um pai (não é um "chapéu" de um "chapéu").
+  // Um "chapéu" só agrupa temas — não pode ter notas diretamente, por isso um
+  // tema que já tem notas não pode passar a ser pai de outro.
   let parentId = body.parent_id || null;
   if (parentId) {
     const parent = await env.DB.prepare(
       'SELECT id, parent_id FROM note_topics WHERE id = ? AND user_id = ?'
     ).bind(parentId, user.id).first();
     if (!parent || parent.parent_id) return badRequest('Tema pai inválido');
+    const parentHasNotes = await env.DB.prepare(
+      'SELECT 1 FROM notes WHERE topic_id = ? AND user_id = ? LIMIT 1'
+    ).bind(parentId, user.id).first();
+    if (parentHasNotes) return badRequest('Este tema já tem notas — move-as antes de o usar como agrupador');
   }
 
   // Obter sort_order máximo atual

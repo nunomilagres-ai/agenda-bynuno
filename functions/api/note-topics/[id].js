@@ -26,7 +26,9 @@ export async function onRequestPut({ request, env, params }) {
 
   // Só um nível de hierarquia, e sem ciclos: não pode ser pai de si próprio,
   // o pai indicado não pode ter ele próprio um pai, e nenhum tema que já
-  // tenha filhos pode passar a ter um pai (ficaria com 3 níveis).
+  // tenha filhos pode passar a ter um pai (ficaria com 3 níveis). Um "chapéu"
+  // só agrupa temas — não pode ter notas diretamente, por isso um tema que já
+  // tem notas não pode passar a ser pai de outro.
   if (parentId) {
     if (parentId === params.id) return badRequest('Um tema não pode ser pai de si próprio');
     const parent = await env.DB.prepare(
@@ -37,6 +39,10 @@ export async function onRequestPut({ request, env, params }) {
       'SELECT 1 FROM note_topics WHERE parent_id = ? AND user_id = ? LIMIT 1'
     ).bind(params.id, user.id).first();
     if (hasChildren) return badRequest('Este tema já agrupa outros temas — não pode também ter um pai');
+    const parentHasNotes = await env.DB.prepare(
+      'SELECT 1 FROM notes WHERE topic_id = ? AND user_id = ? LIMIT 1'
+    ).bind(parentId, user.id).first();
+    if (parentHasNotes) return badRequest('Este tema já tem notas — move-as antes de o usar como agrupador');
   }
 
   const ts = now();

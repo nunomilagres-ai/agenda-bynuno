@@ -72,6 +72,15 @@ export async function onRequestPost({ request, env }) {
   const topicId = body.topic_id || null;
   const pinned  = body.pinned   ? 1 : 0;
 
+  // Um tema "chapéu" só agrupa outros temas — não pode acolher notas
+  // diretamente, só os temas filhos (ou nenhum tema, "Geral").
+  if (topicId) {
+    const isHeader = await env.DB.prepare(
+      'SELECT 1 FROM note_topics WHERE parent_id = ? AND user_id = ? LIMIT 1'
+    ).bind(topicId, user.id).first();
+    if (isHeader) return badRequest('Este tema é um agrupador — escolhe um dos seus subtemas');
+  }
+
   await env.DB.prepare(
     `INSERT INTO notes (id, user_id, topic_id, title, content, pinned, created_date, updated_date)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`

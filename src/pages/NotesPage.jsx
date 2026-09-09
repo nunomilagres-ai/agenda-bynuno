@@ -70,6 +70,12 @@ export default function NotesPage() {
   async function newNote() {
     const id = gid()
     const topicId = selectedTopic && selectedTopic !== 'none' ? selectedTopic : null
+    // Um tema "chapéu" só agrupa outros temas — não pode acolher notas
+    // diretamente, só os temas filhos.
+    if (topicId && topics.some(t => t.parent_id === topicId)) {
+      toast.error('Este tema agrupa subtemas — escolhe um deles para criar a nota')
+      return
+    }
     try {
       const note = await api.notes.create({ id, title: 'Nova nota', content: '', topic_id: topicId })
       setNotes(p => [note, ...p])

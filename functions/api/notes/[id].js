@@ -35,6 +35,15 @@ export async function onRequestPut({ request, env, params }) {
   const topicId = body.topic_id !== undefined ? (body.topic_id || null)   : note.topic_id;
   const pinned  = body.pinned   !== undefined ? (body.pinned ? 1 : 0)     : note.pinned;
 
+  // Um tema "chapéu" só agrupa outros temas — não pode acolher notas
+  // diretamente, só os temas filhos (ou nenhum tema, "Geral").
+  if (topicId && topicId !== note.topic_id) {
+    const isHeader = await env.DB.prepare(
+      'SELECT 1 FROM note_topics WHERE parent_id = ? AND user_id = ? LIMIT 1'
+    ).bind(topicId, user.id).first();
+    if (isHeader) return badRequest('Este tema é um agrupador — escolhe um dos seus subtemas');
+  }
+
   const ts = now();
   await env.DB.prepare(
     `UPDATE notes SET title = ?, content = ?, topic_id = ?, pinned = ?, updated_date = ?

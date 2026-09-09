@@ -56,10 +56,13 @@ export default function NoteEditor({ note, topics, onUpdate, onDelete, onBack, r
   }
 
   const topic = topics.find(t=>t.id===note.topic_id)
+  // Um tema "chapéu" só agrupa outros temas — a IA não pode atribuir uma
+  // nota diretamente a um deles, só aos temas filhos (ou nenhum).
+  const assignableTopics = topics.filter(t => !topics.some(c => c.parent_id === t.id))
 
   return (
     <div className="flex flex-col h-full" style={{background:'var(--surface)'}}>
-      {showPhoto && <PhotoCapture topics={topics} onResult={handlePhotoResult} onClose={()=>setShowPhoto(false)}/>}
+      {showPhoto && <PhotoCapture topics={assignableTopics} onResult={handlePhotoResult} onClose={()=>setShowPhoto(false)}/>}
       <div className="flex items-center gap-2 px-4 py-2 flex-shrink-0" style={{borderBottom:'1px solid var(--border)'}}>
         {onBack && <button onClick={onBack} className="text-xs mr-1 hover:underline" style={{color:'var(--text-3)'}}>← Notas</button>}
         {topic && <span className="text-xs px-2 py-0.5 rounded-full" style={{background:topic.color+'22',color:topic.color}}>{topic.emoji} {topic.name}</span>}

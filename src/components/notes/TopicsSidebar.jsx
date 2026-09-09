@@ -24,16 +24,16 @@ export default function TopicsSidebar({ topics, setTopics, selectedTopic, setSel
 
   async function doCreate(d) {
     try { const t=await api.topics.create(d); setTopics(p=>[...p,t]); setCreating(false); toast.success('Tema criado') }
-    catch { toast.error('Erro ao criar') }
+    catch (err) { toast.error(err.message || 'Erro ao criar') }
   }
   async function doUpdate(id, d) {
     try { const u=await api.topics.update(id,d); setTopics(p=>p.map(t=>t.id===id?{...t,...u}:t)); setEditId(null) }
-    catch { toast.error('Erro') }
+    catch (err) { toast.error(err.message || 'Erro') }
   }
   async function doDelete(id) {
     if (!window.confirm('Apagar tema?')) return
     try { await api.topics.delete(id); setTopics(p=>p.filter(t=>t.id!==id)); if(selectedTopic===id)setSelectedTopic(null) }
-    catch { toast.error('Erro') }
+    catch (err) { toast.error(err.message || 'Erro') }
   }
 
   return (
