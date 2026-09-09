@@ -1,6 +1,6 @@
 // NoteReminders.jsx — reminders linked to a specific note, shown inside NoteEditor
 import { useState } from 'react'
-import { Bell, Plus, Check, X, Trash2, AlertCircle } from 'lucide-react'
+import { Bell, Plus, Check, X, Trash2, AlertCircle, Pencil } from 'lucide-react'
 import { api, fmtDue } from '@/lib/api'
 import { toast } from 'sonner'
 import DateTimeField from './DateTimeField'
@@ -29,8 +29,33 @@ function QuickForm({ noteId, onSave, onCancel }) {
   )
 }
 
+function EditForm({ r, onSave, onCancel }) {
+  const [title, setTitle] = useState(r.title)
+  const [due, setDue] = useState(r.due_date || '')
+  const [recurrence, setRecurrence] = useState(r.recurrence || null)
+  const [recurrenceEndDate, setRecurrenceEndDate] = useState(r.recurrence_end_date || null)
+  const [recurrenceCount, setRecurrenceCount] = useState(r.recurrence_count || null)
+  return (
+    <form onSubmit={e => { e.preventDefault(); title.trim() && due && onSave({ ...r, title: title.trim(), due_date: due, recurrence: recurrence || null, recurrence_end_date: recurrenceEndDate || null, recurrence_count: recurrenceCount || null }) }}
+      className="flex flex-col gap-1 p-2 rounded-lg" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+      <input autoFocus value={title} onChange={e => setTitle(e.target.value)} placeholder="Título da tarefa…"
+        className="text-xs font-medium bg-transparent focus:outline-none" style={{ color: 'var(--text)' }} />
+      <DateTimeField value={due} onChange={setDue} recurrence={recurrence} onRecurrenceChange={setRecurrence} recurrenceEndDate={recurrenceEndDate} onRecurrenceEndDateChange={setRecurrenceEndDate} recurrenceCount={recurrenceCount} onRecurrenceCountChange={setRecurrenceCount} />
+      <div className="flex gap-1.5 mt-0.5">
+        <button type="submit" className="flex-1 py-1 rounded text-xs font-medium text-white flex items-center justify-center gap-1" style={{ background: 'var(--accent)' }}>
+          <Check size={10} /> Guardar
+        </button>
+        <button type="button" onClick={onCancel} className="px-2 py-1 rounded text-xs" style={{ background: 'var(--border)', color: 'var(--text-2)' }}>
+          <X size={10} />
+        </button>
+      </div>
+    </form>
+  )
+}
+
 export default function NoteReminders({ noteId, reminders, setReminders }) {
   const [creating, setCreating] = useState(false)
+  const [editingId, setEditingId] = useState(null)
   const noteReminders = reminders
     .filter(r => r.note_id === noteId)
     .sort((a, b) => a.due_date.localeCompare(b.due_date))
@@ -42,6 +67,15 @@ export default function NoteReminders({ noteId, reminders, setReminders }) {
       setCreating(false)
       toast.success('Tarefa criada')
     } catch { toast.error('Erro ao criar') }
+  }
+
+  async function doEdit(updated) {
+    try {
+      const u = await api.reminders.update(updated.id, updated)
+      setReminders(p => p.map(x => x.id === updated.id ? { ...x, ...u } : x))
+      setEditingId(null)
+      toast.success('Tarefa actualizada')
+    } catch { toast.error('Erro ao actualizar') }
   }
 
   async function doToggle(r) {
@@ -81,6 +115,9 @@ export default function NoteReminders({ noteId, reminders, setReminders }) {
           <p className="text-xs" style={{ color: 'var(--text-3)' }}>Sem tarefas. Clica + para adicionar.</p>
         )}
         {noteReminders.map(r => {
+          if (editingId === r.id) {
+            return <EditForm key={r.id} r={r} onSave={doEdit} onCancel={() => setEditingId(null)} />
+          }
           const { label, overdue } = fmtDue(r.due_date)
           return (
             <div key={r.id} className="flex items-center gap-2 group">
@@ -96,6 +133,9 @@ export default function NoteReminders({ noteId, reminders, setReminders }) {
                 {overdue && !r.completed && <AlertCircle size={9} className="inline mr-0.5" />}{label}
                 {r.recurrence && <span className="ml-1 px-1 rounded" style={{ background: 'var(--surface)6E8', color: 'var(--accent-ink)' }}>{RECURRENCE_LABELS[r.recurrence]}</span>}
               </span>
+              <button onClick={() => setEditingId(r.id)} className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-[var(--surface-2)] flex-shrink-0">
+                <Pencil size={10} style={{ color: 'var(--text-3)' }} />
+              </button>
               <button onClick={() => doDelete(r.id)} className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-[var(--danger-soft)] flex-shrink-0">
                 <Trash2 size={10} style={{ color: 'var(--text-3)' }} />
               </button>

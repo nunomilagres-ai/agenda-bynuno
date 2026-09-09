@@ -4,6 +4,7 @@ import { X, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { api } from '@/lib/api'
 import { fmtDayRange } from '@/lib/dateUtils'
+import DateInput from '@/components/DateInput'
 
 export default function LocationPeriodModal({ locations, defaultLocationId, defaultDate, defaultStartDate, defaultEndDate, period, onClose, onSaved, onDeleted }) {
   const isEdit = !!period
@@ -82,12 +83,12 @@ export default function LocationPeriodModal({ locations, defaultLocationId, defa
             <div className="grid grid-cols-2 gap-2">
               <div className="flex flex-col gap-1">
                 <span className="text-[11px] font-medium" style={{ color: 'var(--text-3)' }}>De</span>
-                <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
+                <DateInput value={startDate} onChange={setStartDate}
                   className="px-2 py-1.5 rounded-lg text-sm" style={{ border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)' }} />
               </div>
               <div className="flex flex-col gap-1">
                 <span className="text-[11px] font-medium" style={{ color: 'var(--text-3)' }}>Até</span>
-                <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
+                <DateInput value={endDate} onChange={setEndDate}
                   className="px-2 py-1.5 rounded-lg text-sm" style={{ border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)' }} />
               </div>
             </div>

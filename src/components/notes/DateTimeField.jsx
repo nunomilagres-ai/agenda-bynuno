@@ -1,6 +1,7 @@
 // DateTimeField.jsx — date (required) + time (optional) + recurrence + recurrence end
 import { useState } from 'react'
 import { isoToDate, isoToTime, combineDatetime } from '@/lib/dateUtils'
+import DateInput from '@/components/DateInput'
 
 const RECURRENCES = [
   { value: '', label: 'Sem recorrência' },
@@ -15,7 +16,7 @@ export default function DateTimeField({ value, onChange, label, recurrence, onRe
   const time = isoToTime(value)
   const [endType, setEndType] = useState(recurrenceCount ? 'count' : recurrenceEndDate ? 'date' : 'never')
 
-  function handleDate(e) { onChange(combineDatetime(e.target.value, time)) }
+  function handleDate(v) { onChange(combineDatetime(v, time)) }
   function handleTime(e) { onChange(combineDatetime(date, e.target.value)) }
 
   function handleEndType(t) {
@@ -30,8 +31,8 @@ export default function DateTimeField({ value, onChange, label, recurrence, onRe
       <div className="flex gap-1.5">
         <div className="flex flex-col flex-1">
           <label className="text-[10px] mb-0.5" style={{ color: 'var(--text-3)' }}>{label || 'Data'} *</label>
-          <input type="date" value={date} onChange={handleDate} required
-            className="text-xs bg-transparent focus:outline-none" style={{ color: 'var(--text-2)' }} />
+          <DateInput value={date} onChange={handleDate} required
+            className="text-xs" style={{ color: 'var(--text-2)' }} />
         </div>
         <div className="flex flex-col w-24">
           <label className="text-[10px] mb-0.5" style={{ color: 'var(--text-3)' }}>Hora (opcional)</label>
@@ -63,8 +64,8 @@ export default function DateTimeField({ value, onChange, label, recurrence, onRe
               {endType === 'date' && onRecurrenceEndDateChange && (
                 <div className="flex flex-col">
                   <label className="text-[10px] mb-0.5" style={{ color: 'var(--text-3)' }}>Data de fim</label>
-                  <input type="date" value={recurrenceEndDate || ''} onChange={e => onRecurrenceEndDateChange(e.target.value || null)}
-                    className="text-xs bg-transparent focus:outline-none" style={{ color: 'var(--text-2)' }} />
+                  <DateInput value={recurrenceEndDate || ''} onChange={v => onRecurrenceEndDateChange(v || null)}
+                    className="text-xs" style={{ color: 'var(--text-2)' }} />
                 </div>
               )}
               {endType === 'count' && onRecurrenceCountChange && (
