@@ -20,16 +20,38 @@ export async function onRequestPut({ request, env, params }) {
   const emoji     = body.emoji  ?? topic.emoji;
   const color     = body.color  ?? topic.color;
   const sortOrder = body.sort_order !== undefined ? body.sort_order : topic.sort_order;
+  const parentId  = body.parent_id !== undefined ? (body.parent_id || null) : topic.parent_id;
 
   if (!name) return badRequest('Nome é obrigatório');
 
+  // Só um nível de hierarquia, e sem ciclos: não pode ser pai de si próprio,
+  // o pai indicado não pode ter ele próprio um pai, e nenhum tema que já
+  // tenha filhos pode passar a ter um pai (ficaria com 3 níveis). Um "chapéu"
+  // só agrupa temas — não pode ter notas diretamente, por isso um tema que já
+  // tem notas não pode passar a ser pai de outro.
+  if (parentId) {
+    if (parentId === params.id) return badRequest('Um tema não pode ser pai de si próprio');
+    const parent = await env.DB.prepare(
+      'SELECT id, parent_id FROM note_topics WHERE id = ? AND user_id = ?'
+    ).bind(parentId, user.id).first();
+    if (!parent || parent.parent_id) return badRequest('Tema pai inválido');
+    const hasChildren = await env.DB.prepare(
+      'SELECT 1 FROM note_topics WHERE parent_id = ? AND user_id = ? LIMIT 1'
+    ).bind(params.id, user.id).first();
+    if (hasChildren) return badRequest('Este tema já agrupa outros temas — não pode também ter um pai');
+    const parentHasNotes = await env.DB.prepare(
+      'SELECT 1 FROM notes WHERE topic_id = ? AND user_id = ? LIMIT 1'
+    ).bind(parentId, user.id).first();
+    if (parentHasNotes) return badRequest('Este tema já tem notas — move-as antes de o usar como agrupador');
+  }
+
   const ts = now();
   await env.DB.prepare(
-    `UPDATE note_topics SET name = ?, emoji = ?, color = ?, sort_order = ?, updated_date = ?
+    `UPDATE note_topics SET name = ?, emoji = ?, color = ?, sort_order = ?, parent_id = ?, updated_date = ?
      WHERE id = ? AND user_id = ?`
-  ).bind(name, emoji, color, sortOrder, ts, params.id, user.id).run();
+  ).bind(name, emoji, color, sortOrder, parentId, ts, params.id, user.id).run();
 
-  return json({ id: params.id, name, emoji, color, sort_order: sortOrder, updated_date: ts });
+  return json({ id: params.id, name, emoji, color, sort_order: sortOrder, parent_id: parentId, updated_date: ts });
 }
 
 export async function onRequestDelete({ request, env, params }) {

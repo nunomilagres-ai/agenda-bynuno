@@ -19,18 +19,21 @@ export default function TopicsSidebar({ topics, setTopics, selectedTopic, setSel
   const [creating, setCreating] = useState(false)
   const [editId, setEditId] = useState(null)
 
+  const topLevel = topics.filter(t => !t.parent_id)
+  const childrenOf = pid => topics.filter(t => t.parent_id === pid)
+
   async function doCreate(d) {
     try { const t=await api.topics.create(d); setTopics(p=>[...p,t]); setCreating(false); toast.success('Tema criado') }
-    catch { toast.error('Erro ao criar') }
+    catch (err) { toast.error(err.message || 'Erro ao criar') }
   }
   async function doUpdate(id, d) {
     try { const u=await api.topics.update(id,d); setTopics(p=>p.map(t=>t.id===id?{...t,...u}:t)); setEditId(null) }
-    catch { toast.error('Erro') }
+    catch (err) { toast.error(err.message || 'Erro') }
   }
   async function doDelete(id) {
     if (!window.confirm('Apagar tema?')) return
     try { await api.topics.delete(id); setTopics(p=>p.filter(t=>t.id!==id)); if(selectedTopic===id)setSelectedTopic(null) }
-    catch { toast.error('Erro') }
+    catch (err) { toast.error(err.message || 'Erro') }
   }
 
   return (
@@ -45,17 +48,35 @@ export default function TopicsSidebar({ topics, setTopics, selectedTopic, setSel
         <N label="Lembretes" icon={<Bell size={12}/>} badge={pendingReminders||undefined} active={showReminders&&!showDashboard} onClick={()=>onSelectReminders(true)}/>
         <div className="my-1 border-t" style={{borderColor:'var(--border)'}}/>
         <N label="📋 Geral" active={!showReminders&&selectedTopic==='none'} onClick={()=>{setSelectedTopic('none');onSelectReminders(false)}}/>
-        {creating && <TopicForm onSave={doCreate} onCancel={()=>setCreating(false)}/>}
-        {topics.map(t => editId===t.id
-          ? <TopicForm key={t.id} v={t} onSave={d=>doUpdate(t.id,d)} onCancel={()=>setEditId(null)}/>
-          : <div key={t.id} className="flex items-center gap-0.5 group">
-              <div className="flex-1 min-w-0">
-                <N label={t.emoji+' '+t.name} active={!showReminders&&selectedTopic===t.id} onClick={()=>{setSelectedTopic(t.id);onSelectReminders(false)}}/>
+        {creating && <TopicForm topics={topics} onSave={doCreate} onCancel={()=>setCreating(false)}/>}
+        {topLevel.map(t => (
+          <div key={t.id} className="flex flex-col gap-0.5">
+            {editId===t.id
+              ? <TopicForm v={t} topics={topics} onSave={d=>doUpdate(t.id,d)} onCancel={()=>setEditId(null)}/>
+              : <div className="flex items-center gap-0.5 group">
+                  <div className="flex-1 min-w-0">
+                    <N label={t.emoji+' '+t.name} active={!showReminders&&selectedTopic===t.id} onClick={()=>{setSelectedTopic(t.id);onSelectReminders(false)}}/>
+                  </div>
+                  <button onClick={()=>setEditId(t.id)} className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-[var(--surface-2)]"><Pencil size={10} style={{color:'var(--text-3)'}}/></button>
+                  <button onClick={()=>doDelete(t.id)} className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-[var(--danger-soft)]"><Trash2 size={10} style={{color:'var(--text-3)'}}/></button>
+                </div>
+            }
+            {childrenOf(t.id).map(c => (
+              <div key={c.id} className="flex items-center gap-0.5 group pl-3" style={{borderLeft:'1px solid var(--border)', marginLeft:'8px'}}>
+                {editId===c.id
+                  ? <div className="flex-1 min-w-0"><TopicForm v={c} topics={topics} onSave={d=>doUpdate(c.id,d)} onCancel={()=>setEditId(null)}/></div>
+                  : <>
+                      <div className="flex-1 min-w-0">
+                        <N label={c.emoji+' '+c.name} active={!showReminders&&selectedTopic===c.id} onClick={()=>{setSelectedTopic(c.id);onSelectReminders(false)}}/>
+                      </div>
+                      <button onClick={()=>setEditId(c.id)} className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-[var(--surface-2)]"><Pencil size={10} style={{color:'var(--text-3)'}}/></button>
+                      <button onClick={()=>doDelete(c.id)} className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-[var(--danger-soft)]"><Trash2 size={10} style={{color:'var(--text-3)'}}/></button>
+                    </>
+                }
               </div>
-              <button onClick={()=>setEditId(t.id)} className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-[var(--surface-2)]"><Pencil size={10} style={{color:'var(--text-3)'}}/></button>
-              <button onClick={()=>doDelete(t.id)} className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-[var(--danger-soft)]"><Trash2 size={10} style={{color:'var(--text-3)'}}/></button>
-            </div>
-        )}
+            ))}
+          </div>
+        ))}
       </div>
     </aside>
   )
